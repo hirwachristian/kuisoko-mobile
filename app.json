@@ -1,25 +1,79 @@
 {
   "expo": {
-    "name": "kuisoko-mobile",
+    "name": "KuISOKO",
     "slug": "kuisoko-mobile",
+    "scheme": "kuisoko",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "owner": "hirwatech",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.kuisoko.mobile",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "KuISOKO uses your camera to let you take photos for product listings, reviews, and chat attachments.",
+        "NSPhotoLibraryUsageDescription": "KuISOKO needs access to your photo library so you can attach photos to product listings, reviews, and chat messages.",
+        "NSPhotoLibraryAddUsageDescription": "KuISOKO can save invoices and other files to your photo library when you choose to."
+      }
     },
     "android": {
+      "package": "com.kuisoko.mobile",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      "expo-asset",
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "KuISOKO needs access to your photo library so you can attach photos to product listings, reviews, and chat messages.",
+          "cameraPermission": "KuISOKO uses your camera to let you take photos for product listings, reviews, and chat attachments."
+        }
+      ],
+      "expo-document-picker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-foreground.png",
+          "color": "#065f46"
+        }
+      ],
+      "@sentry/react-native"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "55a06a7c-6743-4d38-b799-0b8c3b3e8b96"
+      }
     }
   }
 }
