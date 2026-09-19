@@ -7,7 +7,8 @@
     "base": {
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
+      },
+      "channel": "base"
     },
     "development": {
       "extends": "base",
@@ -15,7 +16,8 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "extends": "base",
