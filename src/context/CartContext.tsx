@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { useLanguage } from './LanguageContext';
 import { fetchCart, upsertCartLine, removeCartLine, clearCart as clearCartApi } from '../api/customer';
 import { CartLine } from '../types';
 
@@ -26,7 +28,8 @@ const lineKey = (l: Pick<CartLine, 'productId' | 'selectedColor' | 'selectedSize
 // versa) sees the same cart. Guests get an AsyncStorage snapshot instead, merged into the server
 // cart the moment they sign in (existing server quantities win per line, same as the website).
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { t } = useLanguage();
   const [items, setItems] = useState<CartLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const previousToken = useRef<string | null>(null);
@@ -81,6 +84,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // can be refreshed by a later add. This keeps update/remove (which only key on
   // productId+color+size) correct without needing their own selectedImage plumbing.
   const addToCart: CartContextValue['addToCart'] = async (productId, quantity, selectedColor, selectedSize, unitPrice, selectedImage) => {
+    // Rider/admin accounts aren't customers - the server rejects this too (requireCustomer), but
+    // checking here first avoids an optimistic local update for an action that's about to fail.
+    if (user && user.role !== 'user') {
+      Alert.alert(t('mobile_customer_only_action'));
+      return;
+    }
     const existing = items.find((l) => l.productId === productId && l.selectedColor === selectedColor && l.selectedSize === selectedSize);
     const newQuantity = (existing?.quantity ?? 0) + quantity;
     const line: CartLine = { productId, quantity: newQuantity, selectedColor, selectedSize, unitPrice, selectedImage: selectedImage ?? existing?.selectedImage };

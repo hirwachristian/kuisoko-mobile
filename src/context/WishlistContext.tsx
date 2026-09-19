@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { useLanguage } from './LanguageContext';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '../api/customer';
 
 const GUEST_WISHLIST_KEY = 'kuisoko-wishlist-guest';
@@ -17,7 +19,8 @@ const WishlistContext = createContext<WishlistContextValue | undefined>(undefine
 // GET/POST/DELETE /api/wishlist for signed-in accounts, an AsyncStorage id list for guests, merged
 // into the server list the moment they sign in.
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { t } = useLanguage();
   const [productIds, setProductIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const previousToken = useRef<string | null>(null);
@@ -60,6 +63,11 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Optimistic toggle with rollback on failure, matching the website's toggleWishlist.
   const toggleWishlist = async (productId: string) => {
+    // Rider/admin accounts aren't customers - same reasoning as the guard in CartContext.
+    if (user && user.role !== 'user') {
+      Alert.alert(t('mobile_customer_only_action'));
+      return;
+    }
     const wasWishlisted = productIds.includes(productId);
     const next = wasWishlisted ? productIds.filter((id) => id !== productId) : [...productIds, productId];
     setProductIds(next);
