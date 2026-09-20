@@ -11,6 +11,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import AdminNavigator from './AdminNavigator';
 import CustomerNavigator from './CustomerNavigator';
+import RiderNavigator from './RiderNavigator';
 import { navigationRef } from './navigationRef';
 
 // Matches the website's fixed white/95-blur header + emerald active-state accents (Navbar.tsx)
@@ -56,13 +57,20 @@ const RootNavigator: React.FC = () => {
 
   if (isLoading) return <LoadingScreen />;
 
-  // Admins get the dedicated admin panel (Dashboard/Orders/Products/Users/More) instead of the
-  // customer shopping UI - matches the website, where an admin login redirects straight to
-  // /admin rather than the storefront homepage.
+  // Admins get the dedicated admin panel (Dashboard/Orders/Products/Users/More), riders get their
+  // own delivery-focused UI (RiderNavigator) - neither should ever land in the customer shopping
+  // UI. Matches the website, where an admin/rider login redirects to /admin or /rider rather than
+  // the storefront homepage.
+  const navigatorForUser = () => {
+    if (user!.role === 'admin') return <AdminNavigator />;
+    if (user!.role === 'rider') return <RiderNavigator />;
+    return <CustomerNavigator />;
+  };
+
   return (
     <NavigationContainer ref={navigationRef} theme={buildNavigationTheme(colors)}>
       <GuestModeProvider>
-        {user ? (user.role === 'admin' ? <AdminNavigator /> : <CustomerNavigator />) : <SignedOutFlow />}
+        {user ? navigatorForUser() : <SignedOutFlow />}
       </GuestModeProvider>
     </NavigationContainer>
   );

@@ -15,7 +15,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "KuISOKO uses your camera to let you take photos for product listings, reviews, and chat attachments.",
         "NSPhotoLibraryUsageDescription": "KuISOKO needs access to your photo library so you can attach photos to product listings, reviews, and chat messages.",
-        "NSPhotoLibraryAddUsageDescription": "KuISOKO can save invoices and other files to your photo library when you choose to."
+        "NSPhotoLibraryAddUsageDescription": "KuISOKO can save invoices and other files to your photo library when you choose to.",
+        "NSLocationWhenInUseUsageDescription": "KuISOKO shares your live location with customers while you're actively delivering their order."
       }
     },
     "android": {
@@ -32,7 +33,9 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "web": {
@@ -61,6 +64,12 @@
         }
       ],
       "expo-document-picker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "KuISOKO shares your live location with customers while you're actively delivering their order."
+        }
+      ],
       [
         "expo-notifications",
         {
