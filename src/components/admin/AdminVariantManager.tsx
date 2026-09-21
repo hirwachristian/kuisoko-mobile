@@ -61,6 +61,10 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
 
   const addSizeToColor = (color: string) => onChange([...variants, { id: newId(), sku: '', color, size: '', price: 0, stock: 0 }]);
 
+  // A size-only variant (no color at all) - the counterpart to "Add color" below, for a product
+  // that varies by size but not color. Lands in the "Sizes without a color" list underneath.
+  const addSizeOnlyVariant = () => onChange([...variants, { id: newId(), sku: '', color: '', size: '', price: 0, stock: 0 }]);
+
   const addNewColor = () => {
     const color = newColorName.trim();
     if (!color) return;
@@ -218,23 +222,29 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
           );
         })}
 
-        {/* Variants with no color set - a plain size-only product, or a row still being filled in */}
-        {uncategorized.length > 0 && (
-          <View style={{ marginTop: 6 }}>
+        {/* Variants with no color set - a plain size-only product, or a row still being filled in.
+            "Add size" is the counterpart to "Add color" below, for a product that varies by size
+            but not color - each row's own Color field stays blank on purpose. */}
+        <View style={{ marginTop: 6 }}>
+          <View style={styles.sectionHeaderRow}>
             <Text style={styles.uncategorizedHeading}>Sizes without a color</Text>
-            {uncategorized.map((variant) => (
-              <View key={variant.id} style={styles.variantRow}>
-                <TextField style={styles.variantInput} value={variant.color ?? ''} onChangeText={(t) => updateVariant(variant.id, { color: t })} placeholder="Color" />
-                <TextField style={styles.variantInput} value={variant.size ?? ''} onChangeText={(t) => updateVariant(variant.id, { size: t })} placeholder="Size" />
-                <TextField style={styles.variantInputSmall} value={variant.price ? String(variant.price) : ''} onChangeText={(t) => updateVariant(variant.id, { price: Number(t) || 0 })} placeholder="Price" keyboardType="numeric" />
-                <TextField style={styles.variantInputSmall} value={variant.stock ? String(variant.stock) : ''} onChangeText={(t) => updateVariant(variant.id, { stock: Number(t) || 0 })} placeholder="Stock" keyboardType="numeric" />
-                <TouchableOpacity onPress={() => removeVariant(variant.id)} style={styles.variantRemove}>
-                  <Trash2 size={16} color={colors.rose500} />
-                </TouchableOpacity>
-              </View>
-            ))}
+            <TouchableOpacity style={styles.addSizeButton} onPress={addSizeOnlyVariant}>
+              <Plus size={14} color={colors.accentText} />
+              <Text style={styles.addSizeText}>Add size</Text>
+            </TouchableOpacity>
           </View>
-        )}
+          {uncategorized.map((variant) => (
+            <View key={variant.id} style={styles.variantRow}>
+              <TextField style={styles.variantInput} value={variant.color ?? ''} onChangeText={(t) => updateVariant(variant.id, { color: t })} placeholder="Color" />
+              <TextField style={styles.variantInput} value={variant.size ?? ''} onChangeText={(t) => updateVariant(variant.id, { size: t })} placeholder="Size" />
+              <TextField style={styles.variantInputSmall} value={variant.price ? String(variant.price) : ''} onChangeText={(t) => updateVariant(variant.id, { price: Number(t) || 0 })} placeholder="Price" keyboardType="numeric" />
+              <TextField style={styles.variantInputSmall} value={variant.stock ? String(variant.stock) : ''} onChangeText={(t) => updateVariant(variant.id, { stock: Number(t) || 0 })} placeholder="Stock" keyboardType="numeric" />
+              <TouchableOpacity onPress={() => removeVariant(variant.id)} style={styles.variantRemove}>
+                <Trash2 size={16} color={colors.rose500} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
 
         {/* Add a brand new color */}
         <View style={styles.addColorRow}>
