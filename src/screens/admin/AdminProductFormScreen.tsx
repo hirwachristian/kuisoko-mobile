@@ -12,6 +12,7 @@ import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { Card, FieldLabel, TextField, Button, SectionTitle } from '../../components/admin/ui';
 import AdminVariantManager from '../../components/admin/AdminVariantManager';
+import AdminImageDetailsManager from '../../components/admin/AdminImageDetailsManager';
 import AttachmentSourceSheet from '../../components/AttachmentSourceSheet';
 import type { AdminProductsStackParamList } from '../../navigation/AdminNavigator';
 
@@ -38,6 +39,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [colorImages, setColorImages] = useState<Record<string, string>>({});
+  const [imageDetails, setImageDetails] = useState<Record<string, { name?: string; description?: string }>>({});
   const [isLoading, setIsLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -68,6 +70,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       setVideoUrls(p.videoUrls ?? []);
       setVariants(p.variants);
       setColorImages(p.colorImages ?? {});
+      setImageDetails(p.imageDetails ?? {});
       setIsLoading(false);
     });
   }, [productId]);
@@ -243,6 +246,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       images,
       videoUrls,
       colorImages,
+      imageDetails,
       groupBuyEnabled,
       variants: variants
         .filter((v) => v.color || v.size)
@@ -379,6 +383,15 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
         colorImages={colorImages}
         onColorImagesChange={setColorImages}
         productStock={parseInt(stock, 10) || 0}
+      />
+
+      <SectionTitle style={{ marginTop: 20 }}>Photo details</SectionTitle>
+      <AdminImageDetailsManager
+        images={images}
+        imageDetails={imageDetails}
+        onChange={setImageDetails}
+        defaultName={name || 'Product name'}
+        defaultDescription={description}
       />
 
       <Button label={isEditing ? 'Save Changes' : 'Create Product'} onPress={handleSave} loading={isSaving} style={{ marginTop: 24 }} />

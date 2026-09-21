@@ -340,6 +340,11 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       setActiveVideoIndex(wrapped - product.images.length);
     }
   };
+  // Admin-set name/description override for whichever photo is currently on screen, if any -
+  // absent unless that specific image was deliberately customized (AdminImageDetailsManager).
+  // Matches frontend/pages/ProductDetail.tsx's own activeImageDetail.
+  const activeImageDetail = product.imageDetails?.[product.images[activeImage]];
+
   const galleryPanResponder = PanResponder.create({
     // Only claims the gesture once it's clearly horizontal and past a small threshold, so it
     // never fights the page's own vertical scroll or a tap on the heart button/video controls.
@@ -385,6 +390,15 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </>
         )}
       </View>
+
+      {/* Per-image name/description caption - an admin opt-in that only appears for a photo
+          actually customized with one; everything else stays exactly as it was. */}
+      {activeVideoIndex === null && (activeImageDetail?.name || activeImageDetail?.description) && (
+        <View style={styles.imageCaption}>
+          {!!activeImageDetail?.name && <Text style={styles.imageCaptionName}>{activeImageDetail.name}</Text>}
+          {!!activeImageDetail?.description && <Text style={styles.imageCaptionDescription}>{activeImageDetail.description}</Text>}
+        </View>
+      )}
 
       {(product.images.length > 1 || (product.videoUrls?.length ?? 0) > 0) && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailRow} contentContainerStyle={{ gap: 8 }}>
@@ -749,6 +763,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   galleryNavButtonLeft: { left: 10 },
   galleryNavButtonRight: { right: 10 },
+  imageCaption: { paddingHorizontal: 16, marginTop: 8, marginBottom: 4 },
+  imageCaptionName: { fontSize: 13.5, fontWeight: '800', color: colors.slate900 },
+  imageCaptionDescription: { fontSize: 12, color: colors.slate600, marginTop: 2 },
   thumbnailRow: { paddingHorizontal: 12, marginBottom: 8 },
   thumbnail: { width: 64, height: 64, borderRadius: 14, backgroundColor: colors.slate100, borderWidth: 2 },
   thumbnailActive: { borderColor: colors.emerald600 },

@@ -37,6 +37,9 @@ export interface Product {
   featured?: boolean;
   groupBuyEnabled?: boolean;
   colorImages?: Record<string, string>;
+  /** Per-image name/description override, keyed by image URL (one of `images`) - both optional.
+   * Falls back to this product's own name/description wherever an image has no entry here. */
+  imageDetails?: Record<string, { name?: string; description?: string }>;
   variants: ProductVariant[];
   reviewsList?: ProductReview[];
   ratingBreakdown?: Record<string, number>;
