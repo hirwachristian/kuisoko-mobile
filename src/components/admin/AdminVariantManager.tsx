@@ -107,7 +107,6 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
 
   return (
     <View>
-      {/* Bulk Generator */}
       <View style={styles.bulkCard}>
         <View style={styles.bulkHeader}>
           <Wand2 size={15} color={colors.emerald800} />
@@ -246,7 +245,6 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
           ))}
         </View>
 
-        {/* Add a brand new color */}
         <View style={styles.addColorRow}>
           <TextField style={{ flex: 1 }} value={newColorName} onChangeText={setNewColorName} placeholder="New color name (e.g. Maroon)" />
           <TouchableOpacity style={styles.addColorButton} onPress={addNewColor}>
