@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, RefreshControl, TouchableOpacity, Image, Alert, FlatList } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
-import { Users as UsersIcon, Box, Folder, ClipboardList, Wallet, RefreshCw, FileText } from 'lucide-react-native';
+import { Users as UsersIcon, Box, Folder, ClipboardList, Wallet, RefreshCw, FileText, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../context/AuthContext';
@@ -67,6 +68,18 @@ const AdminDashboardScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  // Inventory Overview - stock-level filter (out/low/in, mirroring ProductCard's 4-tier
+  // getStockLevel with medium+high collapsed into "In Stock"), an optional category filter, and
+  // its own page - matches the same redesign on the website.
+  const [inventoryStockFilter, setInventoryStockFilter] = useState<'all' | 'out' | 'low' | 'in'>('all');
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('all');
+  const [inventoryPage, setInventoryPage] = useState(1);
+  // A changed filter starts a fresh browse rather than landing on whatever page happened to be
+  // selected under the previous filter. Must run unconditionally (before the isLoading early
+  // return below) to satisfy the rules of hooks.
+  useEffect(() => {
+    setInventoryPage(1);
+  }, [inventoryStockFilter, inventoryCategoryFilter]);
   // Bumped on every refresh and used as a `key` on each animated chart below - changing an
   // element's key forces React to unmount and remount it, which resets its internal Animated
   // values and re-fires its mount-time entrance animation. That's the RN equivalent of the
@@ -112,8 +125,22 @@ const AdminDashboardScreen: React.FC = () => {
   const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
   const totalSections = categories.reduce((sum, c) => sum + c.sections.length, 0);
   const paidOrders = orders.filter((o) => o.paymentStatus === 'paid');
+
+  // Collapses the 4-tier scale (out/low/medium/high, matching ProductCard.tsx's own
+  // getStockLevel) into the 3 an admin actually restocks against.
+  const inventoryStockTier = (stock: number): 'out' | 'low' | 'in' => {
+    if (stock <= 0) return 'out';
+    if (stock < 10) return 'low';
+    return 'in';
+  };
+  const INVENTORY_PER_PAGE = 5;
+  const categoryScopedProducts = inventoryCategoryFilter === 'all' ? products : products.filter((p) => p.category === inventoryCategoryFilter);
+  const filteredInventory = inventoryStockFilter === 'all'
+    ? categoryScopedProducts
+    : categoryScopedProducts.filter((p) => inventoryStockTier(p.stock) === inventoryStockFilter);
+  const inventoryTotalPages = Math.max(1, Math.ceil(filteredInventory.length / INVENTORY_PER_PAGE));
+  const inventoryRows = filteredInventory.slice((inventoryPage - 1) * INVENTORY_PER_PAGE, inventoryPage * INVENTORY_PER_PAGE);
   const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
-  const inventoryRows = products.slice(0, 5);
 
   const usersDailySeries = buildDailySeries(users.filter((u) => u.registrationDate).map((u) => ({ date: u.registrationDate! })));
   const usersTrendPercent = computeTrendPercent(usersDailySeries);
@@ -281,12 +308,48 @@ const AdminDashboardScreen: React.FC = () => {
             <Text style={styles.reportButtonText}>Report</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Stock-level filter (with live counts) plus an optional category filter, both scoped to
+            each other so switching category re-counts the chips against just that category. */}
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.inventoryFilterList}
+          contentContainerStyle={styles.inventoryFilterRow}
+          data={(['all', 'in', 'low', 'out'] as const)}
+          keyExtractor={(k) => k}
+          renderItem={({ item: key }) => {
+            const label = key === 'all' ? 'All' : key === 'in' ? 'In Stock' : key === 'low' ? 'Low Stock' : 'Out of Stock';
+            const count = key === 'all' ? categoryScopedProducts.length : categoryScopedProducts.filter((p) => inventoryStockTier(p.stock) === key).length;
+            const active = inventoryStockFilter === key;
+            return (
+              <TouchableOpacity style={[styles.filterChip, active && styles.filterChipActive]} onPress={() => setInventoryStockFilter(key)}>
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label} ({count})</Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+        {categories.length > 0 && (
+          <View style={styles.pickerWrap}>
+            <Picker selectedValue={inventoryCategoryFilter} onValueChange={setInventoryCategoryFilter} mode="dropdown">
+              <Picker.Item label="All categories" value="all" />
+              {categories.map((c) => <Picker.Item key={c.id} label={c.name} value={c.name} />)}
+            </Picker>
+          </View>
+        )}
+
         <View style={styles.inventoryCard}>
           {inventoryRows.length === 0 ? (
-            <EmptyState label="No products yet" />
+            <EmptyState label="No products match this filter" />
           ) : (
             inventoryRows.map((p, i) => {
-              const isLow = p.stock < 10;
+              const tier = inventoryStockTier(p.stock);
+              const tierStyle = tier === 'out'
+                ? { bg: '#fef2f2', fg: colors.rose600 }
+                : tier === 'low'
+                ? { bg: '#fffbeb', fg: '#b45309' }
+                : { bg: colors.emerald50, fg: colors.accentText };
+              const tierLabel = tier === 'out' ? 'Out of Stock' : tier === 'low' ? 'Low Stock' : 'In Stock';
               return (
                 <View key={p.id} style={[styles.inventoryRow, i === inventoryRows.length - 1 && { borderBottomWidth: 0 }]}>
                   <View style={{ flex: 1 }}>
@@ -294,16 +357,37 @@ const AdminDashboardScreen: React.FC = () => {
                     <Text style={styles.inventoryCategory}>{p.category}</Text>
                   </View>
                   <Text style={styles.inventoryPrice}>{formatPrice(p.price)}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: isLow ? '#fef2f2' : colors.emerald50 }]}>
-                    <Text style={[styles.statusPillText, { color: isLow ? colors.rose600 : colors.accentText }]}>
-                      {isLow ? 'Low Stock' : 'In Stock'}
-                    </Text>
+                  <View style={[styles.statusPill, { backgroundColor: tierStyle.bg }]}>
+                    <Text style={[styles.statusPillText, { color: tierStyle.fg }]}>{tierLabel}</Text>
                   </View>
                 </View>
               );
             })
           )}
         </View>
+        {filteredInventory.length > 0 && (
+          <View style={styles.paginationRow}>
+            <Text style={styles.paginationLabel}>
+              {`${Math.min(filteredInventory.length, (inventoryPage - 1) * INVENTORY_PER_PAGE + 1)}-${Math.min(filteredInventory.length, inventoryPage * INVENTORY_PER_PAGE)} of ${filteredInventory.length}`}
+            </Text>
+            <View style={styles.paginationButtons}>
+              <TouchableOpacity
+                style={[styles.paginationButton, inventoryPage === 1 && styles.paginationButtonDisabled]}
+                disabled={inventoryPage === 1}
+                onPress={() => setInventoryPage((pg) => pg - 1)}
+              >
+                <ChevronLeft size={16} color={inventoryPage === 1 ? colors.slate400 : colors.slate700} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.paginationButton, inventoryPage === inventoryTotalPages && styles.paginationButtonDisabled]}
+                disabled={inventoryPage === inventoryTotalPages}
+                onPress={() => setInventoryPage((pg) => pg + 1)}
+              >
+                <ChevronRight size={16} color={inventoryPage === inventoryTotalPages ? colors.slate400 : colors.slate700} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -369,6 +453,21 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   inventoryPrice: { fontSize: 12.5, fontWeight: '800', color: colors.slate900 },
   statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   statusPillText: { fontSize: 10, fontWeight: '800' },
+  inventoryFilterList: { flexGrow: 0, marginBottom: 8 },
+  inventoryFilterRow: { gap: 8, paddingBottom: 2 },
+  filterChip: {
+    height: 34, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white,
+    borderWidth: 1, borderColor: colors.slate200, justifyContent: 'center', alignItems: 'center',
+  },
+  filterChipActive: { backgroundColor: colors.emerald800, borderColor: colors.emerald800 },
+  filterChipText: { fontSize: 11.5, fontWeight: '700', color: colors.slate700 },
+  filterChipTextActive: { color: colors.white },
+  pickerWrap: { marginBottom: 10, borderWidth: 1, borderColor: colors.slate200, borderRadius: 12, backgroundColor: colors.white },
+  paginationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  paginationLabel: { fontSize: 11.5, color: colors.slate600 },
+  paginationButtons: { flexDirection: 'row', gap: 8 },
+  paginationButton: { width: 32, height: 32, borderRadius: 10, borderWidth: 1, borderColor: colors.slate200, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
+  paginationButtonDisabled: { opacity: 0.4 },
 });
 
 export default AdminDashboardScreen;
