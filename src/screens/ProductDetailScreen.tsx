@@ -122,16 +122,13 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!variant || variant.stock <= 0) setSelectedSize(undefined);
   }, [selectedColor, product]);
 
-  // Matches frontend/pages/ProductDetail.tsx's own quantity-clamp effect: switching to a
-  // color/size with less stock than the quantity already dialed in (e.g. picked 5 of a variant
-  // with 8 left, then switched to one with only 3) pulls the number back down, not just caps how
-  // much higher the + button can still go from here.
+  // Matches frontend/pages/ProductDetail.tsx: switching to a different color/size resets the
+  // quantity back to 1 rather than carrying over whatever was dialed in for the previous variant -
+  // carrying it over reads as if that quantity was already confirmed for the newly-selected
+  // variant, which it never was.
   useEffect(() => {
-    if (!product || product.variants.length === 0) return;
-    const variant = product.variants.find((v) => v.color === selectedColor && v.size === selectedSize);
-    if (!variant) return;
-    setQuantity((q) => Math.min(q, Math.max(variant.stock, 1)));
-  }, [product, selectedColor, selectedSize]);
+    setQuantity(1);
+  }, [selectedColor, selectedSize]);
 
   if (loadError) {
     return (
