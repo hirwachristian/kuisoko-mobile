@@ -430,17 +430,15 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           {product.images.map((img, i) => {
             const imageVariant = hasImageStockVariants ? product.variants.find((v) => v.imageUrl === img) : undefined;
             return (
-              <TouchableOpacity key={img} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
+              <TouchableOpacity key={img} style={styles.thumbnailWrap} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
                 <Image
                   source={{ uri: img }}
                   style={[styles.thumbnail, activeVideoIndex === null && activeImage === i ? styles.thumbnailActive : styles.thumbnailInactive]}
                 />
                 {imageVariant && (
-                  <View style={[styles.imageStockBadge, imageVariant.stock <= 0 && styles.imageStockBadgeOut]}>
-                    <Text style={styles.imageStockBadgeText}>
-                      {imageVariant.stock > 0 ? `${imageVariant.stock} left` : t('product_out_of_stock')}
-                    </Text>
-                  </View>
+                  <Text style={[styles.imageStockLabel, imageVariant.stock <= 0 && styles.imageStockLabelOut]}>
+                    {imageVariant.stock > 0 ? `${imageVariant.stock} left` : t('product_out_of_stock')}
+                  </Text>
                 )}
               </TouchableOpacity>
             );
@@ -802,16 +800,13 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   imageCaptionName: { fontSize: 13.5, fontWeight: '800', color: colors.slate900 },
   imageCaptionDescription: { fontSize: 12, color: colors.slate600, marginTop: 2 },
   thumbnailRow: { paddingHorizontal: 12, marginBottom: 8 },
+  thumbnailWrap: { alignItems: 'center', gap: 3 },
   thumbnail: { width: 64, height: 64, borderRadius: 14, backgroundColor: colors.slate100, borderWidth: 2 },
   thumbnailActive: { borderColor: colors.emerald600 },
   thumbnailInactive: { borderColor: colors.slate100, opacity: 0.6 },
   videoThumbnail: { backgroundColor: colors.slate800, alignItems: 'center', justifyContent: 'center' },
-  imageStockBadge: {
-    position: 'absolute', bottom: 2, left: 2, right: 2, borderRadius: 8, paddingVertical: 2,
-    backgroundColor: 'rgba(6,95,70,0.9)', alignItems: 'center',
-  },
-  imageStockBadgeOut: { backgroundColor: 'rgba(225,29,72,0.9)' },
-  imageStockBadgeText: { fontSize: 8.5, fontWeight: '800', color: colors.white },
+  imageStockLabel: { fontSize: 9.5, fontWeight: '800', color: colors.emerald600 },
+  imageStockLabelOut: { color: colors.rose600 },
   body: { padding: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   name: { fontSize: 20, fontWeight: '800', color: colors.slate900, letterSpacing: -0.3 },
