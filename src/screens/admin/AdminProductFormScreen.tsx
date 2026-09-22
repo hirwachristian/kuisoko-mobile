@@ -250,8 +250,8 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       imageDetails,
       groupBuyEnabled,
       variants: variants
-        .filter((v) => v.color || v.size)
-        .map((v) => ({ sku: v.sku, color: v.color, size: v.size, price: Number(v.price) || 0, stock: Number(v.stock) || 0 })),
+        .filter((v) => v.color || v.size || v.imageUrl)
+        .map((v) => ({ sku: v.sku, color: v.color, size: v.size, imageUrl: v.imageUrl, price: Number(v.price) || 0, stock: Number(v.stock) || 0 })),
     };
     try {
       if (isEditing) await updateProduct(productId!, payload, token);
