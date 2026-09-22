@@ -95,6 +95,10 @@ export const fetchRiderLocation = (orderId: string, token: string) =>
 // a screen that only ever uses these two numbers.
 export const fetchStoreLocation = () =>
   apiFetch<{ storeLat: number | null; storeLng: number | null }>('/settings/footer');
+// Same endpoint, but the admin-configured contact details shown on ContactScreen - kept separate
+// from fetchStoreLocation above since that one's typed to just the two map-marker fields.
+export const fetchContactInfo = () =>
+  apiFetch<{ emailAddress: string; phoneNumber: string; locationLines: string[] }>('/settings/footer');
 export const requestReturn = (orderId: string, reason: string, token: string) =>
   apiFetch<{ id: string }>('/returns', { method: 'POST', body: JSON.stringify({ orderId, reason }) }, token);
 export const acknowledgeReturnResolution = (returnId: string, token: string) =>

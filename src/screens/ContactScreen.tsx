@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Mail, Phone, MapPin, CheckCircle2 } from 'lucide-react-native';
-import { submitEnquiry } from '../api/customer';
+import { submitEnquiry, fetchContactInfo } from '../api/customer';
 import { ApiError } from '../api/client';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
@@ -19,6 +19,13 @@ const ContactScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isSent, setIsSent] = useState(false);
+  // The admin-configured support email/phone/address (Settings > Store Configuration on the
+  // website) - was previously hardcoded here to placeholder values that never matched.
+  const [contactInfo, setContactInfo] = useState<{ emailAddress: string; phoneNumber: string; locationLines: string[] } | null>(null);
+
+  useEffect(() => {
+    fetchContactInfo().then(setContactInfo).catch(() => {});
+  }, []);
 
   const isValid = name.trim() && email.trim() && subject.trim() && message.trim();
 
@@ -43,18 +50,24 @@ const ContactScreen: React.FC = () => {
           <Text style={styles.heading}>Get in Touch</Text>
           <Text style={styles.subheading}>Have a question? We're happy to help.</Text>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIconWrap}><Mail size={16} color={colors.accentText} /></View>
-            <Text style={styles.infoText}>support@kuisoko.rw</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoIconWrap}><Phone size={16} color={colors.accentText} /></View>
-            <Text style={styles.infoText}>+250 788 000 000</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoIconWrap}><MapPin size={16} color={colors.accentText} /></View>
-            <Text style={styles.infoText}>Kigali, Rwanda</Text>
-          </View>
+          {!!contactInfo?.emailAddress && (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIconWrap}><Mail size={16} color={colors.accentText} /></View>
+              <Text style={styles.infoText}>{contactInfo.emailAddress}</Text>
+            </View>
+          )}
+          {!!contactInfo?.phoneNumber && (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIconWrap}><Phone size={16} color={colors.accentText} /></View>
+              <Text style={styles.infoText}>{contactInfo.phoneNumber}</Text>
+            </View>
+          )}
+          {!!contactInfo?.locationLines?.length && (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIconWrap}><MapPin size={16} color={colors.accentText} /></View>
+              <Text style={styles.infoText}>{contactInfo.locationLines.join(', ')}</Text>
+            </View>
+          )}
 
           {isSent ? (
             <View style={styles.sentCard}>
