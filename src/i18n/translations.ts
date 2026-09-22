@@ -32,6 +32,7 @@ export const translations: Record<Language, Record<string, string>> = {
     product_in_stock: '{n} in stock',
     detail_reviews: 'Reviews',
     detail_select_color_size: 'Please select color and size',
+    detail_photo_out_of_stock: 'This photo is out of stock - pick another one.',
 
     auth_welcome_back: 'Welcome back!',
     auth_sign_in_subtitle: 'Sign in to your account below.',
@@ -263,6 +264,7 @@ export const translations: Record<Language, Record<string, string>> = {
     product_in_stock: 'Hari {n}',
     detail_reviews: 'Ibitekerezo',
     detail_select_color_size: 'Nyamuneka hitamo ibara n\'ingano',
+    detail_photo_out_of_stock: 'Iyi foto nta bihari - hitamo indi.',
 
     auth_welcome_back: 'Murakaza neza!',
     auth_sign_in_subtitle: 'Injira kuri konti yawe hepfo.',

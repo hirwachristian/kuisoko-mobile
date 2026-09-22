@@ -122,13 +122,15 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!variant || variant.stock <= 0) setSelectedSize(undefined);
   }, [selectedColor, product]);
 
-  // Matches frontend/pages/ProductDetail.tsx: switching to a different color/size resets the
-  // quantity back to 1 rather than carrying over whatever was dialed in for the previous variant -
-  // carrying it over reads as if that quantity was already confirmed for the newly-selected
-  // variant, which it never was.
+  // Matches frontend/pages/ProductDetail.tsx: switching to a different color/size (or, for a
+  // per-image-stock product, a different photo) resets the quantity back to 1 rather than
+  // carrying over whatever was dialed in for the previous variant - carrying it over reads as if
+  // that quantity was already confirmed for the newly-selected variant, which it never was. The
+  // image part is written inline (not via a named variable) since `product` may still be null
+  // here, before this component's early returns above.
   useEffect(() => {
     setQuantity(1);
-  }, [selectedColor, selectedSize]);
+  }, [selectedColor, selectedSize, product?.variants?.some((v) => v.imageUrl) ? product.images[activeImage] : null]);
 
   if (loadError) {
     return (
@@ -167,6 +169,13 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   );
   const requiresSelection = (availableColors.length > 0 || availableSizes.length > 0) && !matchedVariant;
 
+  // An alternative to color/size variants for a product that isn't meant to vary by either, but
+  // still has per-photo stock (AdminImageStockManager) - the gallery itself is the picker, so
+  // whichever photo is currently on screen (`currentImage`) IS the selection.
+  const currentImage = product.images[activeImage];
+  const hasImageStockVariants = product.variants.some((v) => v.imageUrl);
+  const imageStockVariant = hasImageStockVariants ? product.variants.find((v) => v.imageUrl === currentImage) : undefined;
+
   // A variant price of 0 means "no override - inherit the product's base price", not "free" -
   // matches the website's own convention. Some real product data also has stray 1-2 RWF variant
   // "prices" from admin data-entry mistakes (the mobile admin's variant editor previously had no
@@ -177,7 +186,7 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const hasDiscount = !!product.discount && product.discount > 0;
   const discounted = (price: number) => (hasDiscount ? price * (1 - product.discount! / 100) : price);
 
-  const effectiveStock = matchedVariant?.stock ?? product.stock;
+  const effectiveStock = matchedVariant?.stock ?? imageStockVariant?.stock ?? product.stock;
   const isOutOfStock = effectiveStock <= 0;
   const isWishlisted = productIds.includes(product.id);
 
@@ -186,8 +195,16 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const variantPrices = product.variants.length > 0 ? product.variants.map((v) => effectivePriceOf(v.price)) : [product.price];
   const minPrice = discounted(Math.min(...variantPrices));
   const maxPrice = discounted(Math.max(...variantPrices));
-  const singlePrice = matchedVariant ? discounted(effectivePriceOf(matchedVariant.price)) : discounted(product.price);
-  const effectivePrice = matchedVariant ? effectivePriceOf(matchedVariant.price) : product.price;
+  const singlePrice = matchedVariant
+    ? discounted(effectivePriceOf(matchedVariant.price))
+    : imageStockVariant
+    ? discounted(effectivePriceOf(imageStockVariant.price))
+    : discounted(product.price);
+  const effectivePrice = matchedVariant
+    ? effectivePriceOf(matchedVariant.price)
+    : imageStockVariant
+    ? effectivePriceOf(imageStockVariant.price)
+    : product.price;
 
   const similarProducts = allProducts.filter((p) => p.id !== product.id && p.subCategory === product.subCategory).slice(0, 6);
 
@@ -220,6 +237,10 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       Alert.alert(t('detail_select_color_size'));
       return;
     }
+    if (hasImageStockVariants && (!imageStockVariant || imageStockVariant.stock <= 0)) {
+      Alert.alert(t('detail_photo_out_of_stock'));
+      return;
+    }
     addToCart(product.id, quantity, selectedColor, selectedSize, effectivePrice, product.images[activeImage]);
   };
 
@@ -230,6 +251,10 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleBuyNow = () => {
     if (requiresSelection) {
       Alert.alert(t('detail_select_color_size'));
+      return;
+    }
+    if (hasImageStockVariants && (!imageStockVariant || imageStockVariant.stock <= 0)) {
+      Alert.alert(t('detail_photo_out_of_stock'));
       return;
     }
     navigation.navigate('CheckoutAddress', {
@@ -402,14 +427,24 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {(product.images.length > 1 || (product.videoUrls?.length ?? 0) > 0) && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailRow} contentContainerStyle={{ gap: 8 }}>
-          {product.images.map((img, i) => (
-            <TouchableOpacity key={img} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
-              <Image
-                source={{ uri: img }}
-                style={[styles.thumbnail, activeVideoIndex === null && activeImage === i ? styles.thumbnailActive : styles.thumbnailInactive]}
-              />
-            </TouchableOpacity>
-          ))}
+          {product.images.map((img, i) => {
+            const imageVariant = hasImageStockVariants ? product.variants.find((v) => v.imageUrl === img) : undefined;
+            return (
+              <TouchableOpacity key={img} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
+                <Image
+                  source={{ uri: img }}
+                  style={[styles.thumbnail, activeVideoIndex === null && activeImage === i ? styles.thumbnailActive : styles.thumbnailInactive]}
+                />
+                {imageVariant && (
+                  <View style={[styles.imageStockBadge, imageVariant.stock <= 0 && styles.imageStockBadgeOut]}>
+                    <Text style={styles.imageStockBadgeText}>
+                      {imageVariant.stock > 0 ? `${imageVariant.stock} left` : t('product_out_of_stock')}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
           {(product.videoUrls ?? []).map((videoUrl, i) => (
             <TouchableOpacity key={videoUrl} onPress={() => setActiveVideoIndex(i)}>
               <View style={[styles.thumbnail, styles.videoThumbnail, activeVideoIndex === i ? styles.thumbnailActive : styles.thumbnailInactive]}>
@@ -771,6 +806,12 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   thumbnailActive: { borderColor: colors.emerald600 },
   thumbnailInactive: { borderColor: colors.slate100, opacity: 0.6 },
   videoThumbnail: { backgroundColor: colors.slate800, alignItems: 'center', justifyContent: 'center' },
+  imageStockBadge: {
+    position: 'absolute', bottom: 2, left: 2, right: 2, borderRadius: 8, paddingVertical: 2,
+    backgroundColor: 'rgba(6,95,70,0.9)', alignItems: 'center',
+  },
+  imageStockBadgeOut: { backgroundColor: 'rgba(225,29,72,0.9)' },
+  imageStockBadgeText: { fontSize: 8.5, fontWeight: '800', color: colors.white },
   body: { padding: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   name: { fontSize: 20, fontWeight: '800', color: colors.slate900, letterSpacing: -0.3 },

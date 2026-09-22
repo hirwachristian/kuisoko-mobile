@@ -12,6 +12,7 @@ import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { Card, FieldLabel, TextField, Button, SectionTitle } from '../../components/admin/ui';
 import AdminVariantManager from '../../components/admin/AdminVariantManager';
+import AdminImageStockManager from '../../components/admin/AdminImageStockManager';
 import AdminImageDetailsManager from '../../components/admin/AdminImageDetailsManager';
 import AttachmentSourceSheet from '../../components/AttachmentSourceSheet';
 import type { AdminProductsStackParamList } from '../../navigation/AdminNavigator';
@@ -382,6 +383,14 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
         images={images}
         colorImages={colorImages}
         onColorImagesChange={setColorImages}
+        productStock={parseInt(stock, 10) || 0}
+      />
+
+      <SectionTitle style={{ marginTop: 20 }}>Per-image stock</SectionTitle>
+      <AdminImageStockManager
+        images={images}
+        variants={variants}
+        onChange={setVariants}
         productStock={parseInt(stock, 10) || 0}
       />
 

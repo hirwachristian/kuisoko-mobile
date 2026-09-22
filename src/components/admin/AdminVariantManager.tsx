@@ -83,13 +83,18 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
 
   const setColorImage = (color: string, url: string) => onColorImagesChange({ ...colorImages, [color]: url });
 
+  // Image-stock rows (see AdminImageStockManager) share this same flat array but don't belong
+  // here at all - without this filter they'd fall into the "no color" bucket below and render as
+  // a bogus empty size/price/stock row.
+  const colorSizeVariants = variants.filter((v) => !v.imageUrl);
+
   // Grouped by color, in first-appearance order, so bulk-generated colors don't reshuffle as
   // their rows are edited. Variants with no color (a plain size-only product, or one mid-edit)
   // fall into their own bucket below rather than being lost.
   const colorOrder: string[] = [];
   const grouped = new Map<string, ProductVariant[]>();
   const uncategorized: ProductVariant[] = [];
-  variants.forEach((v) => {
+  colorSizeVariants.forEach((v) => {
     const color = (v.color ?? '').trim();
     if (!color) {
       uncategorized.push(v);
@@ -102,7 +107,7 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
     grouped.get(color)!.push(v);
   });
 
-  const totalVariantStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+  const totalVariantStock = colorSizeVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
   const overAllocated = totalVariantStock > productStock;
 
   return (
@@ -137,7 +142,7 @@ const AdminVariantManager: React.FC<AdminVariantManagerProps> = ({ variants, onC
       <View style={{ marginTop: 20 }}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeading}>Product Variants</Text>
-          {variants.length > 0 && (
+          {colorSizeVariants.length > 0 && (
             <View style={[styles.stockBadge, overAllocated && styles.stockBadgeError]}>
               {overAllocated && <AlertTriangle size={11} color={colors.rose600} />}
               <Text style={[styles.stockBadgeText, overAllocated && styles.stockBadgeTextError]}>
