@@ -159,6 +159,10 @@ export const updateFreeShippingThreshold = (freeShippingThreshold: number, token
   apiFetch<{ freeShippingThreshold: number }>('/shipping/settings', { method: 'PATCH', body: JSON.stringify({ freeShippingThreshold }) }, token);
 
 // ---- Business & notifications ----
+export interface PaymentMethod { name: string; enabled: boolean; detail: string }
+export const fetchPaymentMethods = () => apiFetch<{ paymentMethods: PaymentMethod[] }>('/settings/payment-methods');
+export const updatePaymentMethods = (methods: PaymentMethod[], token: string) =>
+  apiFetch<{ paymentMethods: PaymentMethod[] }>('/settings/payment-methods', { method: 'PUT', body: JSON.stringify({ methods }) }, token);
 export const fetchAppSettings = () => apiFetch<AppSettings>('/settings/app');
 export const updateAppSettings = (data: Partial<AppSettings>, token: string) =>
   apiFetch<AppSettings>('/settings/app', { method: 'PATCH', body: JSON.stringify(data) }, token);

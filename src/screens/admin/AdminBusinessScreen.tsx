@@ -8,6 +8,7 @@ import { AnnouncementBanner } from '../../types';
 import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { Card, SectionTitle, FieldLabel, TextField, Button, EmptyState } from '../../components/admin/ui';
+import AdminPaymentMethods from '../../components/admin/AdminPaymentMethods';
 
 const AdminBusinessScreen: React.FC = () => {
   const { token } = useAuth();
@@ -83,7 +84,10 @@ const AdminBusinessScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <SectionTitle>Marketing</SectionTitle>
+      <SectionTitle>Payment Methods</SectionTitle>
+      <AdminPaymentMethods />
+
+      <SectionTitle style={{ marginTop: 24 }}>Marketing</SectionTitle>
       <Card style={styles.switchRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.switchLabel}>Push Alerts</Text>
