@@ -7,13 +7,14 @@ import {
   fetchMyOrder, fetchRiderLocation, fetchStoreLocation, requestReturn, acknowledgeReturnResolution,
 } from '../api/customer';
 import DeliveryTrackingMap from '../components/customer/DeliveryTrackingMap';
+import OrderProgressStepper from '../components/customer/OrderProgressStepper';
 import { Order } from '../types';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { StatusBadge, Button } from '../components/admin/ui';
+import { StatusBadge, Button, getStatusPalette } from '../components/admin/ui';
 import type { CustomerStackParamList } from '../navigation/CustomerNavigator';
 
 type Props = NativeStackScreenProps<CustomerStackParamList, 'OrderDetail'>;
@@ -126,6 +127,24 @@ const OrderDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   const canRequestReturn = order.status === 'Delivered' && !order.returnRequest;
+  const statusPalette = getStatusPalette(colors)[order.status] ?? { bg: colors.slate100, fg: colors.slate700 };
+  const statusBanner = ((): { title: string; subtitle: string } => {
+    switch (order.status) {
+      case 'Pending':
+        return { title: 'Your order has been placed', subtitle: "We're getting it ready for processing." };
+      case 'Processing':
+        return { title: 'Your order is being processed', subtitle: "We're preparing your items for shipment." };
+      case 'Shipped':
+        return { title: 'Your order is on its way', subtitle: order.riderName ? `Being delivered by ${order.riderName}.` : 'A rider will be assigned to your delivery shortly.' };
+      case 'Delivered':
+        return { title: 'Your order has been delivered', subtitle: order.deliveryConfirmedAt ? `Delivered on ${formatDate(order.deliveryConfirmedAt)}.` : 'Enjoy your purchase!' };
+      case 'Cancelled':
+        return { title: 'This order was cancelled', subtitle: "If this wasn't expected, please contact support." };
+      case 'Returned':
+      default:
+        return { title: 'This order was returned', subtitle: 'Your return has been processed.' };
+    }
+  })();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -137,6 +156,13 @@ const OrderDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
           <StatusBadge status={order.status} />
         </View>
+
+        <View style={[styles.statusBanner, { backgroundColor: statusPalette.bg }]}>
+          <Text style={[styles.statusBannerTitle, { color: statusPalette.fg }]}>{statusBanner.title}</Text>
+          <Text style={styles.statusBannerSubtitle}>{statusBanner.subtitle}</Text>
+        </View>
+
+        <OrderProgressStepper status={order.status} />
 
         {/* Ports frontend/pages/UserDashboard.tsx: appears automatically the moment an order's
             status reaches Shipped (the backend generates a 4-digit code right then, no "get code"
@@ -187,7 +213,7 @@ const OrderDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             {order.trackingHistory.map((event, i) => (
               <View key={event.id ?? i} style={styles.timelineRow}>
                 <View style={styles.timelineDotWrap}>
-                  <View style={styles.timelineDot} />
+                  <View style={[styles.timelineDot, { backgroundColor: getStatusPalette(colors)[event.status]?.fg ?? colors.emerald600 }]} />
                   {i < order.trackingHistory!.length - 1 && <View style={styles.timelineLine} />}
                 </View>
                 <View style={{ flex: 1, paddingBottom: 16 }}>
@@ -280,6 +306,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.slate50 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  statusBanner: { borderRadius: 16, padding: 16, marginBottom: 16 },
+  statusBannerTitle: { fontSize: 14.5, fontWeight: '800' },
+  statusBannerSubtitle: { fontSize: 12.5, color: colors.slate600, marginTop: 4, lineHeight: 18 },
   orderNumber: { fontSize: 16, fontWeight: '900', color: colors.slate900 },
   date: { fontSize: 12, color: colors.slate400, marginTop: 2 },
   codeCard: {

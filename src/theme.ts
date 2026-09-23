@@ -15,6 +15,8 @@ const lightColors = {
   orange500: '#f97316',
   orange600: '#ea580c',
   orange800: '#9a3412',
+  lime50: '#f7fee7',
+  lime700: '#4d7c0e',
   rose50: '#fef2f2',
   rose500: '#f43f5e',
   rose600: '#e11d48',
@@ -76,10 +78,12 @@ const darkColors: typeof lightColors = {
   orange50: '#431407',
   amber50: '#451a03',
   rose50: '#3f0d0d',
+  lime50: '#1a2e05',
   // Audited as text-only (never background) - the darkest ("800") tint of each accent lightens
   // for contrast, matching the website's `text-amber-800 dark:text-amber-300` convention.
   amber800: '#fcd34d',
   orange800: '#fdba74',
+  lime700: '#bef264',
   accentText: '#34d399', // emerald-400 - the lightened counterpart of accentText's light-mode emerald-700
   background: '#020617',
   surface: '#0f172a',

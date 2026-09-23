@@ -89,6 +89,25 @@ export interface DeliveryAddress {
   additionalInfo?: string;
 }
 
+// A saved Address Book entry - backend/src/routes/addresses.ts, already shared with the website
+// (frontend/types.ts's SavedAddress). lat/lng are set by free server-side geocoding and may be
+// absent right after creation.
+export interface SavedAddress {
+  id: string;
+  label: string;
+  fullName: string;
+  phoneNumber: string;
+  country: string;
+  cityTown: string;
+  district: string;
+  streetAddress: string;
+  houseBuildingNumber?: string;
+  additionalInfo?: string;
+  isDefault: boolean;
+  lat?: number | null;
+  lng?: number | null;
+}
+
 export interface TrackingEvent {
   id?: string;
   status: string;

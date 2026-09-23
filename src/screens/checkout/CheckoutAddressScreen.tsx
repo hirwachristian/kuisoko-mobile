@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, SafeAr
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Truck, User, MapPin, ShoppingBag } from 'lucide-react-native';
 import { apiFetch } from '../../api/client';
-import { calculateShipping } from '../../api/customer';
+import { calculateShipping, fetchAddresses } from '../../api/customer';
 import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -21,7 +21,7 @@ const formatPrice = (value: number) => `RWF ${Math.round(value).toLocaleString()
 const CheckoutAddressScreen: React.FC<Props> = ({ route, navigation }) => {
   const { colors } = useAppTheme();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { requestSignIn } = useGuestMode();
   const { items } = useCart();
   const directBuyItem = route.params?.directBuyItem;
@@ -43,6 +43,35 @@ const CheckoutAddressScreen: React.FC<Props> = ({ route, navigation }) => {
     houseBuildingNumber: '',
     additionalInfo: '',
   });
+  // Ports frontend/components/AddressForm.tsx's autofill effect: pre-fill from the customer's
+  // default Address Book entry the moment this screen mounts, but only into fields still empty -
+  // never overwrite something the shopper already typed. Guests (no token) get the blank form
+  // exactly as before.
+  const hasAutofilledRef = useRef(false);
+  useEffect(() => {
+    if (!token || hasAutofilledRef.current) return;
+    (async () => {
+      try {
+        const { addresses } = await fetchAddresses(token);
+        const defaultAddress = addresses.find((a) => a.isDefault);
+        if (!defaultAddress || hasAutofilledRef.current) return;
+        hasAutofilledRef.current = true;
+        setForm((prev) => ({
+          ...prev,
+          phoneNumber: prev.phoneNumber || defaultAddress.phoneNumber,
+          country: prev.country || defaultAddress.country,
+          cityTown: prev.cityTown || defaultAddress.cityTown,
+          district: prev.district || defaultAddress.district,
+          streetAddress: prev.streetAddress || defaultAddress.streetAddress,
+          houseBuildingNumber: prev.houseBuildingNumber || defaultAddress.houseBuildingNumber || '',
+          additionalInfo: prev.additionalInfo || defaultAddress.additionalInfo || '',
+        }));
+      } catch {
+        // no saved address, or fetch failed - leave the form blank, same as before this feature
+      }
+    })();
+  }, [token]);
+
   const [subtotal, setSubtotal] = useState(0);
   const [shipping, setShipping] = useState<{ fee: number; zoneName: string; isFreeShipping: boolean } | null>(null);
   const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);

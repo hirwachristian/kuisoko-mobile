@@ -81,10 +81,14 @@ export const Button: React.FC<ButtonProps> = ({ label, onPress, variant = 'prima
   );
 };
 
-const getStatusPalette = (colors: AppColors): Record<string, { bg: string; fg: string }> => ({
+// Exported so screens that need a status's color for more than just the badge (e.g. a tracking
+// timeline dot) can reuse the exact same mapping instead of re-deriving it.
+export const getStatusPalette = (colors: AppColors): Record<string, { bg: string; fg: string }> => ({
   Pending: { bg: colors.amber50, fg: colors.amber800 },
   Processing: { bg: colors.orange50, fg: colors.orange800 },
-  Shipped: { bg: colors.emerald50, fg: colors.accentText },
+  // Was identical to Delivered (both emerald) - no way to tell the two apart at a glance. Lime
+  // matches the website's own Shipped=lime fix this session, without colliding with Delivered.
+  Shipped: { bg: colors.lime50, fg: colors.lime700 },
   Delivered: { bg: colors.emerald50, fg: colors.accentText },
   Cancelled: { bg: colors.rose50, fg: colors.rose600 },
   Returned: { bg: colors.slate100, fg: colors.slate700 },

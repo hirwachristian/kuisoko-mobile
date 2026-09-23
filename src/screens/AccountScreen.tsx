@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Ima
 import { useFocusEffect } from '@react-navigation/native';
 import {
   LogOut, Mail, Phone, UserCircle, Package, Info, MessageCircle, ChevronRight,
-  UserCog, HelpCircle, Truck, FileText, Shield, Mail as MailIcon, Sun, Moon, Smartphone,
+  UserCog, HelpCircle, Truck, FileText, Shield, Mail as MailIcon, Sun, Moon, Smartphone, MapPin,
 } from 'lucide-react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -192,9 +192,14 @@ const AccountScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={[styles.rowValue, { flex: 1 }]}>Edit Profile</Text>
             <ChevronRight size={16} color={colors.slate400} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.menuRow, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('OrderHistory')}>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('OrderHistory')}>
             <View style={styles.rowIcon}><Package size={15} color={colors.accentText} /></View>
             <Text style={[styles.rowValue, { flex: 1 }]}>{t('mobile_my_orders')}</Text>
+            <ChevronRight size={16} color={colors.slate400} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.menuRow, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('AddressBook')}>
+            <View style={styles.rowIcon}><MapPin size={15} color={colors.accentText} /></View>
+            <Text style={[styles.rowValue, { flex: 1 }]}>Address Book</Text>
             <ChevronRight size={16} color={colors.slate400} />
           </TouchableOpacity>
         </View>

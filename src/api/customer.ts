@@ -1,7 +1,7 @@
 import { apiFetch, createUploadFormData } from './client';
 import {
   User, Product, Order, CartLine, GroupOrderStatusResponse, DeliveryAddress, ProductReview,
-  AnnouncementBanner, ChatMessage,
+  AnnouncementBanner, ChatMessage, SavedAddress,
 } from '../types';
 
 // ---- Sign up ----
@@ -45,6 +45,18 @@ export const addToWishlist = (productId: string, token: string) =>
   apiFetch<void>(`/wishlist/${productId}`, { method: 'POST' }, token);
 export const removeFromWishlist = (productId: string, token: string) =>
   apiFetch<void>(`/wishlist/${productId}`, { method: 'DELETE' }, token);
+
+// ---- Address Book (saved delivery addresses, server-persisted per account) ----
+export type SavedAddressInput = Omit<SavedAddress, 'id' | 'lat' | 'lng'>;
+export const fetchAddresses = (token: string) => apiFetch<{ addresses: SavedAddress[] }>('/addresses', {}, token);
+export const createAddress = (data: SavedAddressInput, token: string) =>
+  apiFetch<{ address: SavedAddress }>('/addresses', { method: 'POST', body: JSON.stringify(data) }, token);
+export const updateAddress = (id: string, data: Partial<SavedAddressInput>, token: string) =>
+  apiFetch<{ address: SavedAddress }>(`/addresses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, token);
+export const deleteAddress = (id: string, token: string) =>
+  apiFetch<void>(`/addresses/${id}`, { method: 'DELETE' }, token);
+export const setDefaultAddress = (id: string, token: string) =>
+  apiFetch<{ address: SavedAddress }>(`/addresses/${id}/default`, { method: 'POST' }, token);
 
 // ---- Shipping & coupons (checkout) ----
 export const calculateShipping = (district: string, subtotal: number) =>
@@ -186,7 +198,7 @@ export const registerPushToken = (token: string, platform: 'ios' | 'android', au
 export const unregisterPushToken = (token: string, authToken: string) =>
   apiFetch<void>('/users/me/push-token', { method: 'DELETE', body: JSON.stringify({ token }) }, authToken);
 
-// ---- Profile (name/phone/address/password) ----
+// ---- Profile (name/phone/address/password/profile photo) ----
 export interface UpdateProfileInput {
   name?: string;
   username?: string;
@@ -194,9 +206,27 @@ export interface UpdateProfileInput {
   address?: string;
   password?: string;
   currentPassword?: string;
+  profileImage?: string | null;
 }
 export const updateProfile = (data: UpdateProfileInput, token: string) =>
   apiFetch<{ user: User }>('/users/me', { method: 'PATCH', body: JSON.stringify(data) }, token);
+
+// Same generic "upload any file, get a URL" helper as uploadReviewImage below - a named alias so
+// the profile-photo call site reads clearly rather than looking like it's (mis-)reusing a
+// review-photo function.
+export const uploadProfilePhoto = uploadReviewImage;
+
+// ---- Two-factor authentication (enable/disable for an already-signed-in account) ----
+// Same backend routes as api/admin.ts's identical trio (POST /auth/2fa/enable/start|confirm,
+// POST /auth/2fa/disable - generic, not admin-only) - duplicated here rather than importing from
+// admin.ts, matching this file's existing convention of owning its own copy of shared upload
+// helpers rather than reaching into the admin API module.
+export const start2FAEnable = (token: string) =>
+  apiFetch<{ message: string }>('/auth/2fa/enable/start', { method: 'POST' }, token);
+export const confirm2FAEnable = (code: string, token: string) =>
+  apiFetch<{ user: User; message: string }>('/auth/2fa/enable/confirm', { method: 'POST', body: JSON.stringify({ code }) }, token);
+export const disable2FA = (password: string, token: string) =>
+  apiFetch<{ user: User; message: string }>('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ password }) }, token);
 
 // ---- Chat (one ongoing thread per customer with the shared admin inbox) ----
 export const fetchChatAdminStatus = (token: string) => apiFetch<{ online: boolean }>('/chat/admin-status', {}, token);
