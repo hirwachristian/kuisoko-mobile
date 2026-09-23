@@ -173,7 +173,12 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   // still has per-photo stock (AdminImageStockManager) - the gallery itself is the picker, so
   // whichever photo is currently on screen (`currentImage`) IS the selection.
   const currentImage = product.images[activeImage];
-  const hasImageStockVariants = product.variants.some((v) => v.imageUrl);
+  // Per-image stock is "instead of" color/size (AdminImageStockManager's own framing) - a product
+  // is meant to use exactly one of the two systems. If real color/size variants exist (derived the
+  // same way availableColors/availableSizes above already do), any stray/leftover image-stock rows
+  // must never affect display or purchase, so this only ever turns on when there are none.
+  const hasColorSizeVariants = availableColors.length > 0 || availableSizes.length > 0;
+  const hasImageStockVariants = !hasColorSizeVariants && product.variants.some((v) => v.imageUrl);
   const imageStockVariant = hasImageStockVariants ? product.variants.find((v) => v.imageUrl === currentImage) : undefined;
 
   // A variant price of 0 means "no override - inherit the product's base price", not "free" -
