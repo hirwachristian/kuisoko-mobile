@@ -6,6 +6,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { Product } from '../../types';
+import { getProductThumbnail } from '../../utils/productImage';
 
 const formatPrice = (value: number) => `RWF ${Math.round(value).toLocaleString()}`;
 
@@ -46,7 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
       <View style={styles.imageWrap}>
-        <Image source={{ uri: product.images[0] }} style={[styles.image, isOutOfStock && styles.imageDim]} resizeMode="contain" />
+        <Image source={{ uri: getProductThumbnail(product) }} style={[styles.image, isOutOfStock && styles.imageDim]} resizeMode="contain" />
         <View style={styles.badgeStack}>
           {isOutOfStock && (
             <View style={[styles.badge, { backgroundColor: colors.slate800 }]}>

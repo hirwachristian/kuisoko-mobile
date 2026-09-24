@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Switch, Al
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Picker } from '@react-native-picker/picker';
-import { X, Plus, Camera, Image as ImageIcon, Video as VideoIcon, File as FileIcon, Play } from 'lucide-react-native';
+import { X, Plus, Camera, Image as ImageIcon, Video as VideoIcon, File as FileIcon, Play, Star } from 'lucide-react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
 import { fetchProduct, createProduct, updateProduct, deleteProduct, uploadFile, fetchCategories } from '../../api/admin';
@@ -37,6 +37,9 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const [featured, setFeatured] = useState(false);
   const [groupBuyEnabled, setGroupBuyEnabled] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  // Subset of `images` chosen as the card/listing thumbnail(s) - independent of variants, so it
+  // works even for a product with no color/size/image-stock variants at all.
+  const [thumbnailImages, setThumbnailImages] = useState<string[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [colorImages, setColorImages] = useState<Record<string, string>>({});
@@ -68,6 +71,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       setFeatured(!!p.featured);
       setGroupBuyEnabled(!!p.groupBuyEnabled);
       setImages(p.images);
+      setThumbnailImages(p.thumbnailImages ?? []);
       setVideoUrls(p.videoUrls ?? []);
       setVariants(p.variants);
       setColorImages(p.colorImages ?? {});
@@ -186,6 +190,11 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       for (const color of Object.keys(next)) if (next[color] === url) delete next[color];
       return next;
     });
+    setThumbnailImages((prev) => prev.filter((u) => u !== url));
+  };
+
+  const toggleThumbnailImage = (url: string) => {
+    setThumbnailImages((prev) => (prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]));
   };
 
   // Ports the same taxonomy the customer Shop screen filters against (Category.sections[].items) -
@@ -245,6 +254,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       stock: stockNum,
       featured,
       images,
+      thumbnailImages,
       videoUrls,
       colorImages,
       imageDetails,
@@ -289,15 +299,27 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
     <>
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <SectionTitle>Images</SectionTitle>
+      {images.length > 0 && (
+        <Text style={styles.variantHint}>Tap the star on one or more photos to use them as this product's card/listing thumbnail. None selected uses the first photo.</Text>
+      )}
       <View style={styles.imageRow}>
-        {images.map((url) => (
-          <View key={url} style={styles.imageWrap}>
-            <Image source={{ uri: url }} style={styles.image} />
-            <TouchableOpacity style={styles.imageRemove} onPress={() => removeImage(url)}>
-              <X size={12} color={colors.white} />
-            </TouchableOpacity>
-          </View>
-        ))}
+        {images.map((url) => {
+          const isThumbnail = thumbnailImages.includes(url);
+          return (
+            <View key={url} style={styles.imageWrap}>
+              <Image source={{ uri: url }} style={[styles.image, isThumbnail && styles.imageThumbnailSelected]} />
+              <TouchableOpacity
+                style={[styles.imageStar, isThumbnail && styles.imageStarActive]}
+                onPress={() => toggleThumbnailImage(url)}
+              >
+                <Star size={12} color={isThumbnail ? colors.white : colors.slate400} fill={isThumbnail ? colors.white : 'none'} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.imageRemove} onPress={() => removeImage(url)}>
+                <X size={12} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+          );
+        })}
         <TouchableOpacity style={styles.addImageButton} onPress={() => setIsImageSheetVisible(true)} disabled={isUploading}>
           {isUploading ? <ActivityIndicator color={colors.emerald800} /> : <Plus size={22} color={colors.emerald800} />}
         </TouchableOpacity>
@@ -435,7 +457,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   imageWrap: { position: 'relative' },
   image: { width: 72, height: 72, borderRadius: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.slate100 },
+  imageThumbnailSelected: { borderWidth: 2, borderColor: colors.amber800 },
   imageRemove: { position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.rose500, alignItems: 'center', justifyContent: 'center' },
+  imageStar: { position: 'absolute', bottom: -6, left: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.slate200, alignItems: 'center', justifyContent: 'center' },
+  imageStarActive: { backgroundColor: colors.amber800, borderColor: colors.amber800 },
   addImageButton: { width: 72, height: 72, borderRadius: 12, borderWidth: 2, borderColor: colors.emerald800, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   pickerWrap: { marginHorizontal: -8, borderWidth: 1, borderColor: colors.slate200, borderRadius: 12 },
   rowGap: { flexDirection: 'row', gap: 12 },

@@ -10,3 +10,10 @@ import { Product } from '../types';
 export function getLineImage(product: Product, selectedImage?: string | null, selectedColor?: string | null): string {
   return selectedImage || (selectedColor && product.colorImages?.[selectedColor]) || product.images[0];
 }
+
+// The image to show for this product on cards/listings: the admin's first chosen thumbnail if
+// any are set, otherwise the first gallery image - every card/listing call site should resolve
+// through this instead of reaching for images[0] directly.
+export function getProductThumbnail(product: Product): string | undefined {
+  return product.thumbnailImages && product.thumbnailImages.length > 0 ? product.thumbnailImages[0] : product.images[0];
+}

@@ -9,6 +9,7 @@ import { Plus, Search, Download, Upload } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { fetchProducts, fetchCategories, exportProductsCsv, importProductsCsv } from '../../api/admin';
 import { Product, Category } from '../../types';
+import { getProductThumbnail } from '../../utils/productImage';
 import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { EmptyState } from '../../components/admin/ui';
@@ -157,7 +158,7 @@ const AdminProductsScreen: React.FC<Props> = ({ navigation }) => {
         ListEmptyComponent={<EmptyState label="No products found" />}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => navigation.navigate('ProductForm', { productId: item.id })}>
-            <Image source={{ uri: item.images[0] }} style={styles.cardImage} resizeMode="contain" />
+            <Image source={{ uri: getProductThumbnail(item) }} style={styles.cardImage} resizeMode="contain" />
             <View style={{ flex: 1 }}>
               <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
               <Text style={styles.cardMeta}>{item.category} · {item.subCategory}</Text>

@@ -9,6 +9,7 @@ import { ChevronRight, ArrowRight, Sparkles } from 'lucide-react-native';
 import { apiFetch } from '../api/client';
 import { fetchSiteImages } from '../api/customer';
 import { Product, Category } from '../types';
+import { getProductThumbnail } from '../utils/productImage';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -126,7 +127,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       const inCategory = products.filter((p) => p.category === cat.name);
       if (inCategory.length === 0) return null;
       const top = inCategory.reduce((a, b) => (b.price > a.price ? b : a));
-      return { name: cat.name, image: top.images[0] };
+      return { name: cat.name, image: getProductThumbnail(top) ?? top.images[0] };
     })
     .filter((c): c is { name: string; image: string } => c !== null);
 

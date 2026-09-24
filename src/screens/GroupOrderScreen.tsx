@@ -5,6 +5,7 @@ import { Users, Share2 } from 'lucide-react-native';
 import { apiFetch } from '../api/client';
 import { startGroupOrder, fetchGroupOrderStatus, joinGroupOrder } from '../api/customer';
 import { Product, GroupOrderStatusResponse, DeliveryAddress } from '../types';
+import { getProductThumbnail } from '../utils/productImage';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -174,7 +175,7 @@ const GroupOrderScreen: React.FC<Props> = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled">
         {product && (
           <View style={styles.productCard}>
-            <Image source={{ uri: product.images[0] }} style={styles.productImage} resizeMode="contain" />
+            <Image source={{ uri: getProductThumbnail(product) }} style={styles.productImage} resizeMode="contain" />
             <View style={{ flex: 1 }}>
               <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
               <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>

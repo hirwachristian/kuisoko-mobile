@@ -4,6 +4,7 @@ import { Trash2, ShoppingBag } from 'lucide-react-native';
 import { AppColors } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { Product } from '../../types';
+import { getProductThumbnail } from '../../utils/productImage';
 
 const formatPrice = (value: number) => `RWF ${Math.round(value).toLocaleString()}`;
 
@@ -47,7 +48,7 @@ const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ product, onPress, o
         <Trash2 size={14} color={colors.rose600} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.imageWrap} activeOpacity={0.9} onPress={onPress}>
-        <Image source={{ uri: product.images[0] }} style={[styles.image, isOutOfStock && styles.imageDim]} resizeMode="contain" />
+        <Image source={{ uri: getProductThumbnail(product) }} style={[styles.image, isOutOfStock && styles.imageDim]} resizeMode="contain" />
         <View style={[styles.stockPill, { backgroundColor: stockPill.bg }]}>
           <Text style={styles.stockPillText}>{stockPill.label}</Text>
         </View>

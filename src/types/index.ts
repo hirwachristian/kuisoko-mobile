@@ -33,6 +33,10 @@ export interface Product {
   category: string;
   subCategory: string;
   images: string[];
+  /** Subset of `images` the admin picked to represent this product on cards/listings - independent
+   * of variants/per-image-stock, so it works even with no color/size/image-stock variants at all.
+   * Falls back to images[0] wherever this is empty. */
+  thumbnailImages?: string[];
   videoUrls?: string[];
   rating: number;
   reviews: number;
