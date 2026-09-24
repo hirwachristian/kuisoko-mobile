@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, Image, Animated, Easing, TouchableOpacity, StyleSheet, ActivityIndicator,
   RefreshControl, SafeAreaView, Dimensions, FlatList,
@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { ChevronRight, ArrowRight, Sparkles } from 'lucide-react-native';
 import { apiFetch } from '../api/client';
+import { fetchSiteImages } from '../api/customer';
 import { Product, Category } from '../types';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
@@ -22,11 +23,12 @@ type Props = BottomTabScreenProps<CustomerTabParamList, 'Home'> & {
 const screenWidth = Dimensions.get('window').width;
 const HERO_HEIGHT = 340;
 
-// The exact same 5 hero images as frontend/pages/Home.tsx's HERO_SLIDES - the first two are the
-// same Unsplash photos, the last three are the website's own bundled creative, served as static
-// assets off its production domain (frontend/public/home/hero-*.jpg) since the mobile app has no
-// bundled copy of them.
-const HERO_SLIDES = [
+// Used whenever the admin hasn't configured any hero images yet (GET /site-images/public comes
+// back empty) - the same 5 images as frontend/pages/Home.tsx's own DEFAULT_HERO_SLIDES fallback;
+// the first two are the same Unsplash photos, the last three are the website's own bundled
+// creative, served as static assets off its production domain since the mobile app has no bundled
+// copy of them.
+const DEFAULT_HERO_SLIDES = [
   'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&q=80',
   'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&q=80',
   'https://kuisoko.store/home/hero-3.jpg',
@@ -44,11 +46,29 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroImages, setHeroImages] = useState<string[]>([]);
   const heroScrollRef = useRef<ScrollView>(null);
+  const heroSlides = heroImages.length > 0 ? heroImages : DEFAULT_HERO_SLIDES;
   // Ports frontend/pages/Home.tsx's hero transition: each slide starts slightly zoomed in
   // (scale-105) and settles to its natural size (scale-100) as it becomes active - one Animated
   // value per slide so the effect replays every time that slide comes back around, not just once.
-  const heroScales = useRef(HERO_SLIDES.map(() => new Animated.Value(1.08))).current;
+  // Rebuilt (not a plain useRef) whenever the slide COUNT changes - e.g. once the admin-configured
+  // list replaces the default array - so this never indexes past the end of a shorter/longer list.
+  const heroScales = useMemo(() => heroSlides.map(() => new Animated.Value(1.08)), [heroSlides.length]);
+
+  useEffect(() => {
+    fetchSiteImages().then(({ heroImages: fetched }) => setHeroImages(fetched)).catch(() => {});
+  }, []);
+
+  // The fetched list can legitimately have a different length than the default one it replaces -
+  // if the currently-shown slide index would now point past the end, snap back to the first slide
+  // rather than crash on an out-of-bounds Animated.Image/heroScales lookup.
+  useEffect(() => {
+    if (heroIndex >= heroSlides.length) {
+      setHeroIndex(0);
+      heroScrollRef.current?.scrollTo({ x: 0, animated: false });
+    }
+  }, [heroSlides.length, heroIndex]);
 
   const animateHeroZoom = useCallback((index: number) => {
     heroScales[index].setValue(1.08);
@@ -83,7 +103,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setHeroIndex((prev) => {
-        const next = (prev + 1) % HERO_SLIDES.length;
+        const next = (prev + 1) % heroSlides.length;
         heroScrollRef.current?.scrollTo({ x: next * screenWidth, animated: true });
         animateHeroZoom(next);
         return next;
@@ -142,7 +162,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             }}
             style={styles.heroScroll}
           >
-            {HERO_SLIDES.map((uri, i) => (
+            {heroSlides.map((uri, i) => (
               <View key={i} style={styles.heroSlide}>
                 <Animated.Image
                   source={{ uri }}
@@ -183,7 +203,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.heroDots}>
-            {HERO_SLIDES.map((_, i) => (
+            {heroSlides.map((_, i) => (
               <View key={i} style={[styles.heroDot, i === heroIndex && styles.heroDotActive]} />
             ))}
           </View>

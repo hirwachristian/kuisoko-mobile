@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { ShieldCheck, Truck, HeartHandshake, Sparkles } from 'lucide-react-native';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
+import { fetchSiteImages } from '../api/customer';
 import Logo from '../components/Logo';
 
 // Mirrors frontend/components/AboutSection.tsx's copy - mostly-static content, so kept English-
@@ -15,9 +16,44 @@ const FEATURES = [
   { Icon: Sparkles, title: 'Quality Products', text: 'Skincare, beauty, and everyday essentials curated for quality.' },
 ];
 
+// Used whenever the admin hasn't configured any About Us images yet (GET /site-images/public
+// comes back empty). Mobile has no bundled copy of these (unlike the website, which has local
+// files under frontend/public/about/) so this points at the website's own hosted copies, same
+// reasoning as HomeScreen.tsx's DEFAULT_HERO_SLIDES.
+const DEFAULT_ABOUT_IMAGES = [
+  'https://kuisoko.store/about/about-1.jpg',
+  'https://kuisoko.store/about/about-2.jpg',
+  'https://kuisoko.store/about/about-3.jpg',
+];
+
 const AboutScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const styles = createStyles(colors);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [aboutImages, setAboutImages] = useState<string[]>([]);
+  const images = aboutImages.length > 0 ? aboutImages : DEFAULT_ABOUT_IMAGES;
+  // A single reused fade value (rather than one Animated.Value per slide, like HomeScreen's hero)
+  // - only one image is ever on screen here, so fading it in on each slide change is enough for a
+  // simple crossfade-style transition without any per-index bookkeeping to keep in sync.
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    fetchSiteImages().then(({ aboutImages: fetched }) => setAboutImages(fetched)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (currentSlide >= images.length) setCurrentSlide(0);
+  }, [images.length, currentSlide]);
+
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, [currentSlide, fadeAnim]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentSlide((prev) => (prev + 1) % images.length), 4500);
+    return () => clearInterval(timer);
+  }, [images.length]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,6 +61,16 @@ const AboutScreen: React.FC = () => {
         <View style={styles.logoWrap}>
           <Logo height={40} />
         </View>
+
+        <View style={styles.galleryWrap}>
+          <Animated.Image source={{ uri: images[currentSlide] }} style={[styles.galleryImage, { opacity: fadeAnim }]} resizeMode="cover" />
+          <View style={styles.galleryDots}>
+            {images.map((_, i) => (
+              <View key={i} style={[styles.galleryDot, i === currentSlide && styles.galleryDotActive]} />
+            ))}
+          </View>
+        </View>
+
         <Text style={styles.heading}>About KuISOKO</Text>
         <Text style={styles.paragraph}>
           KuISOKO is Rwanda's marketplace for premium skincare, beauty products, and everyday essentials.
@@ -54,6 +100,11 @@ const AboutScreen: React.FC = () => {
 const createStyles = (colors: AppColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.slate50 },
   logoWrap: { alignItems: 'center', marginBottom: 20 },
+  galleryWrap: { aspectRatio: 4 / 3, borderRadius: 24, overflow: 'hidden', backgroundColor: colors.emerald900, marginBottom: 20 },
+  galleryImage: { width: '100%', height: '100%' },
+  galleryDots: { position: 'absolute', bottom: 12, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  galleryDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
+  galleryDotActive: { backgroundColor: colors.white, width: 18 },
   heading: { fontSize: 22, fontWeight: '900', color: colors.slate900, marginBottom: 12 },
   paragraph: { fontSize: 14, color: colors.slate600, lineHeight: 21, marginBottom: 12 },
   featureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },

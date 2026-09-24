@@ -111,6 +111,10 @@ export const fetchStoreLocation = () =>
 // from fetchStoreLocation above since that one's typed to just the two map-marker fields.
 export const fetchContactInfo = () =>
   apiFetch<{ emailAddress: string; phoneNumber: string; locationLines: string[] }>('/settings/footer');
+// Admin-managed replacement for the hardcoded hero/about image arrays - the same pool the website's
+// Home.tsx/AboutSection.tsx now read from (backend/src/routes/siteImages.ts), no auth required.
+export const fetchSiteImages = () =>
+  apiFetch<{ heroImages: string[]; aboutImages: string[] }>('/site-images/public');
 export const requestReturn = (orderId: string, reason: string, token: string) =>
   apiFetch<{ id: string }>('/returns', { method: 'POST', body: JSON.stringify({ orderId, reason }) }, token);
 export const acknowledgeReturnResolution = (returnId: string, token: string) =>
