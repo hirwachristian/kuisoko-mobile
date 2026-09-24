@@ -12,6 +12,7 @@ import { apiFetch } from '../api/client';
 import { submitReview, fetchAlsoBought, requestRestockNotification, uploadReviewImage, deleteUploadedFile } from '../api/customer';
 import { ApiError } from '../api/client';
 import { Product } from '../types';
+import { getProductThumbnail } from '../utils/productImage';
 import { AppColors } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -105,6 +106,12 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       apiFetch<{ product: Product }>(`/products/${productId}`).then(({ product: p }) => {
         setProduct(p);
         navigation.setOptions({ title: p.name });
+        // Whichever photo is starred as this product's thumbnail is also where the gallery opens,
+        // so what a shopper saw on the card matches what they see right after opening the product,
+        // instead of always defaulting to the first uploaded image regardless of what's starred.
+        const thumb = getProductThumbnail(p);
+        const idx = thumb ? p.images.indexOf(thumb) : -1;
+        setActiveImage(idx >= 0 ? idx : 0);
       }),
       apiFetch<{ products: Product[] }>('/products').then(({ products }) => setAllProducts(products)),
       fetchAlsoBought(productId).then(({ products }) => setAlsoBought(products)).catch(() => setAlsoBought([])),
