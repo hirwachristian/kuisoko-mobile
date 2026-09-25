@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, SafeAreaView, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { Wallet, Banknote, Check, Tag, X, ShoppingBag, ChevronLeft } from 'lucide-react-native';
+import { Wallet, CreditCard, Banknote, Check, Tag, X, ShoppingBag, ChevronLeft } from 'lucide-react-native';
 import { apiFetch } from '../../api/client';
 import {
   requestCheckoutVerification, verifyCheckoutCode, placeOrder, requestMomoPayment, fetchMomoStatus, validateCoupon, PlaceOrderItem,
+  fetchWallet,
 } from '../../api/customer';
+import { fetchPaymentMethods } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { Product } from '../../types';
 import { AppColors } from '../../theme';
@@ -20,7 +22,7 @@ import type { CustomerStackParamList } from '../../navigation/CustomerNavigator'
 
 type Props = NativeStackScreenProps<CustomerStackParamList, 'CheckoutPayment'>;
 
-type PaymentMethod = 'Cash on Delivery' | 'MTN MoMo';
+type PaymentMethod = 'Cash on Delivery' | 'MTN MoMo' | 'Wallet';
 type Stage = 'method' | 'verify' | 'momoPhone' | 'momoWait' | 'placing';
 
 const formatPrice = (value: number) => `RWF ${Math.round(value).toLocaleString()}`;
@@ -48,10 +50,21 @@ const CheckoutPaymentScreen: React.FC<Props> = ({ route, navigation }) => {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const pollAttempts = useRef(0);
 
+  // "Wallet" only shows up as a selectable method when the admin has actually enabled it in
+  // Payment Settings - same admin-configurable payment_methods list the website's checkout reads,
+  // even though this screen's Cash on Delivery/MTN MoMo options predate that list and stay
+  // hardcoded (a pre-existing gap, not something this wallet port is meant to fix).
+  const [walletEnabled, setWalletEnabled] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
   useFocusEffect(
     useCallback(() => {
       apiFetch<{ products: Product[] }>('/products').then(({ products: fetched }) => setProducts(fetched));
-    }, [])
+      fetchPaymentMethods()
+        .then(({ paymentMethods }) => setWalletEnabled(paymentMethods.some((m) => m.enabled && /wallet/i.test(m.name))))
+        .catch(() => {});
+      if (token) fetchWallet(token).then((r) => setWalletBalance(r.balance)).catch(() => {});
+    }, [token])
   );
 
   // Buy Now (directBuyItem) checks out a single item standalone, matching the website exactly -
@@ -276,7 +289,11 @@ const CheckoutPaymentScreen: React.FC<Props> = ({ route, navigation }) => {
             {couponError ? <Text style={styles.error}>{couponError}</Text> : null}
 
             <Text style={styles.heading}>{t('mobile_payment_method')}</Text>
-            {([['Cash on Delivery', Banknote], ['MTN MoMo', Wallet]] as [PaymentMethod, typeof Banknote][]).map(([value, Icon]) => (
+            {([
+              ['Cash on Delivery', Banknote],
+              ['MTN MoMo', Wallet],
+              ...(walletEnabled && token ? [['Wallet', CreditCard] as [PaymentMethod, typeof Banknote]] : []),
+            ] as [PaymentMethod, typeof Banknote][]).map(([value, Icon]) => (
               <TouchableOpacity
                 key={value}
                 style={[styles.methodRow, method === value && styles.methodRowActive]}
@@ -285,17 +302,26 @@ const CheckoutPaymentScreen: React.FC<Props> = ({ route, navigation }) => {
               >
                 <Icon size={20} color={method === value ? colors.accentText : colors.slate600} />
                 <Text style={[styles.methodLabel, method === value && styles.methodLabelActive]}>
-                  {value === 'Cash on Delivery' ? t('mobile_cash_on_delivery') : t('mobile_momo_pay')}
+                  {value === 'Cash on Delivery' ? t('mobile_cash_on_delivery') : value === 'MTN MoMo' ? t('mobile_momo_pay') : t('mobile_wallet_pay')}
+                  {value === 'Wallet' && walletBalance !== null ? ` (${formatPrice(walletBalance)} ${t('mobile_wallet_available_suffix')})` : ''}
                 </Text>
                 {method === value && <Check size={18} color={colors.accentText} />}
               </TouchableOpacity>
             ))}
+            {method === 'Wallet' && walletBalance !== null && walletBalance < total && (
+              <Text style={styles.error}>{t('mobile_wallet_insufficient', { balance: formatPrice(walletBalance), total: formatPrice(total) })}</Text>
+            )}
             <View style={styles.buttonRow}>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.8}>
                 <ChevronLeft size={16} color={colors.slate600} />
                 <Text style={styles.backButtonText}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, { flex: 1, marginTop: 0 }]} onPress={handleContinueFromMethod} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={[styles.button, { flex: 1, marginTop: 0 }, method === 'Wallet' && walletBalance !== null && walletBalance < total && styles.buttonDisabled]}
+                onPress={handleContinueFromMethod}
+                activeOpacity={0.85}
+                disabled={method === 'Wallet' && walletBalance !== null && walletBalance < total}
+              >
                 <Text style={styles.buttonText}>{t('mobile_continue')}</Text>
               </TouchableOpacity>
             </View>

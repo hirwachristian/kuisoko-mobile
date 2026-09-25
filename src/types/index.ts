@@ -65,6 +65,8 @@ export interface User {
   unread?: boolean;
   twoFactorEnabled?: boolean;
   registrationDate?: string;
+  /** Wallet balance, RWF - only ever changed server-side via lib/wallet.ts's adjustBalance(). */
+  balance?: number;
 }
 
 export type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned';

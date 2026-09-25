@@ -1,4 +1,4 @@
-import { apiFetch, createUploadFormData } from './client';
+import { apiFetch, createUploadFormData, API_BASE_URL, ApiError } from './client';
 import {
   User, Product, Order, CartLine, GroupOrderStatusResponse, DeliveryAddress, ProductReview,
   AnnouncementBanner, ChatMessage, SavedAddress,
@@ -125,6 +125,34 @@ export const requestMomoPayment = (orderId: string, phoneNumber: string) =>
   apiFetch<{ referenceId: string }>('/momo/request-to-pay', { method: 'POST', body: JSON.stringify({ orderId, phoneNumber }) });
 export const fetchMomoStatus = (referenceId: string) =>
   apiFetch<{ status: 'PENDING' | 'SUCCESSFUL' | 'FAILED'; reason?: string }>(`/momo/status/${referenceId}`);
+
+// ---- Wallet ----
+// Same MTN MoMo/Paypack request->poll->settle contract as checkout above, but authenticated
+// (a wallet requires an account) and crediting a balance instead of settling an order - see
+// backend/src/lib/wallet.ts and backend/src/routes/wallet.ts.
+export interface WalletSummary { balance: number; pendingDeposits: number; lifetimeTopups: number }
+export interface WalletTransaction {
+  id: string;
+  type: 'topup' | 'purchase' | 'refund';
+  amount: number;
+  balanceAfter: number;
+  reference: string | null;
+  description: string;
+  createdAt: string;
+}
+export const fetchWallet = (token: string) => apiFetch<WalletSummary>('/wallet', {}, token);
+export const fetchWalletTransactions = (token: string) => apiFetch<{ transactions: WalletTransaction[] }>('/wallet/transactions', {}, token);
+export const requestWalletTopupMomo = (phoneNumber: string, amount: number, token: string) =>
+  apiFetch<{ referenceId: string }>('/wallet/topup/momo', { method: 'POST', body: JSON.stringify({ phoneNumber, amount }) }, token);
+export const requestWalletTopupPaypack = (phoneNumber: string, amount: number, token: string) =>
+  apiFetch<{ referenceId: string }>('/wallet/topup/paypack', { method: 'POST', body: JSON.stringify({ phoneNumber, amount }) }, token);
+export const fetchWalletTopupStatus = (reference: string, token: string) =>
+  apiFetch<{ status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }>(`/wallet/topup/status/${reference}`, {}, token);
+export const exportWalletStatementCsv = async (token: string): Promise<string> => {
+  const response = await fetch(`${API_BASE_URL}/wallet/transactions/export`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new ApiError(response.status, 'Could not export wallet statement.');
+  return response.text();
+};
 
 // ---- Group orders ----
 export interface StartGroupOrderInput {

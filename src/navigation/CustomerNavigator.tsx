@@ -30,6 +30,7 @@ import ContactScreen from '../screens/ContactScreen';
 import ChatScreen from '../screens/ChatScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import AddressBookScreen from '../screens/AddressBookScreen';
+import WalletScreen from '../screens/WalletScreen';
 import FaqScreen from '../screens/FaqScreen';
 import ShippingPolicyScreen from '../screens/ShippingPolicyScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
@@ -49,6 +50,7 @@ export type CustomerStackParamList = {
   Chat: undefined;
   EditProfile: undefined;
   AddressBook: undefined;
+  Wallet: undefined;
   Faq: undefined;
   ShippingPolicy: undefined;
   TermsOfService: undefined;
@@ -150,6 +152,7 @@ const CustomerNavigator: React.FC = () => {
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Support Chat' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen name="AddressBook" component={AddressBookScreen} options={{ title: 'Address Book' }} />
+      <Stack.Screen name="Wallet" component={WalletScreen} options={{ title: 'My Wallet' }} />
       <Stack.Screen name="Faq" component={FaqScreen} options={{ title: 'FAQ' }} />
       <Stack.Screen name="ShippingPolicy" component={ShippingPolicyScreen} options={{ title: 'Shipping Policy' }} />
       <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ title: 'Terms of Service' }} />
