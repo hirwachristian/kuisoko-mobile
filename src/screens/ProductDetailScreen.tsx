@@ -171,10 +171,16 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return !variant || variant.stock <= 0;
   };
 
-  const matchedVariant = product.variants.find(
-    (v) => (!availableColors.length || v.color === selectedColor) && (!availableSizes.length || v.size === selectedSize)
-  );
-  const requiresSelection = (availableColors.length > 0 || availableSizes.length > 0) && !matchedVariant;
+  // Only meaningful when the product actually has color/size variants - `!availableColors.length`
+  // and `!availableSizes.length` are both trivially true for a per-image-stock-only product (zero
+  // colors AND zero sizes configured), which made .find() return the *first* variant in the array
+  // unconditionally regardless of which photo was on screen, silently bypassing imageStockVariant
+  // below for price/stock everywhere it's used (display AND what's actually charged at checkout).
+  const hasAnyColorOrSize = availableColors.length > 0 || availableSizes.length > 0;
+  const matchedVariant = hasAnyColorOrSize
+    ? product.variants.find((v) => (!availableColors.length || v.color === selectedColor) && (!availableSizes.length || v.size === selectedSize))
+    : undefined;
+  const requiresSelection = hasAnyColorOrSize && !matchedVariant;
 
   // An alternative to color/size variants for a product that isn't meant to vary by either, but
   // still has per-photo stock (AdminImageStockManager) - the gallery itself is the picker, so
