@@ -479,10 +479,14 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         <View style={styles.priceStockRow}>
           <View style={styles.priceRow}>
-            {matchedVariant || minPrice === maxPrice ? (
+            {matchedVariant || hasImageStockVariants || minPrice === maxPrice ? (
               <>
                 <Text style={styles.price}>{formatPrice(singlePrice)}</Text>
-                {hasDiscount && <Text style={styles.originalPrice}>{formatPrice(matchedVariant ? effectivePriceOf(matchedVariant.price) : product.price)}</Text>}
+                {hasDiscount && (
+                  <Text style={styles.originalPrice}>
+                    {formatPrice(matchedVariant ? effectivePriceOf(matchedVariant.price) : imageStockVariant ? effectivePriceOf(imageStockVariant.price) : product.price)}
+                  </Text>
+                )}
               </>
             ) : (
               <Text style={styles.price}>{formatPrice(minPrice)} - {formatPrice(maxPrice)}</Text>
