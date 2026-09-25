@@ -1,7 +1,6 @@
 import { Asset } from 'expo-asset';
 import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 import { Order } from '../types';
-import { logoColors } from '../theme';
 
 // The store deals exclusively in RWF (mirrors frontend/context/AppContext.tsx's getFormattedPrice
 // comment). order.currency is a nullable free-text DB column that's almost never actually set at
@@ -23,17 +22,24 @@ async function getStampDataUri(): Promise<string> {
   return cachedStampBase64;
 }
 
-const logoSvg = `<svg width="140" height="40" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
-  <path d="M40 60 L140 60 L160 160 L20 160 Z" fill="${logoColors.bag}" />
-  <path d="M60 60 C60 30, 120 30, 120 60" stroke="${logoColors.handle}" stroke-width="10" fill="none" />
-  <path d="M55 110 L75 130 L115 90" stroke="${logoColors.check}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="200" y="115" font-size="80" font-weight="700"><tspan fill="${logoColors.textGreen}">Ku</tspan><tspan fill="${logoColors.textOrange1}">Isoko</tspan></text>
-</svg>`;
+let cachedLogoBase64: string | null = null;
+
+// Same bundled-asset/data-URI approach as the stamp above - the official circular badge artwork
+// (frontend/public/branding/logo.png), not the old hand-drawn inline SVG this used to render.
+async function getLogoDataUri(): Promise<string> {
+  if (cachedLogoBase64) return cachedLogoBase64;
+  const asset = Asset.fromModule(require('../../assets/invoice-logo.png'));
+  await asset.downloadAsync();
+  const base64 = await readAsStringAsync(asset.localUri ?? asset.uri, { encoding: EncodingType.Base64 });
+  cachedLogoBase64 = `data:image/png;base64,${base64}`;
+  return cachedLogoBase64;
+}
 
 // Mirrors frontend/pages/AdminManageOrders.tsx's invoice markup (same layout, fonts sizes and
 // colors) so a PDF generated from the app looks identical to one generated from the website.
 export async function buildInvoiceHtml(order: Order, adminName: string, adminEmail: string): Promise<string> {
   const stampDataUri = await getStampDataUri();
+  const logoDataUri = await getLogoDataUri();
   const itemsRows = order.items
     .map((item) => {
       const variant = [item.selectedSize, item.selectedColor].filter(Boolean).map((v) => `(${v})`).join(' ');
@@ -51,7 +57,7 @@ export async function buildInvoiceHtml(order: Order, adminName: string, adminEma
 <head><meta charset="utf-8" /></head>
 <body style="margin:0;padding:0;">
   <div style="max-width:760px;margin:0 auto;background:#ffffff;padding:64px 56px 48px;color:#1a1a1a;font-family:sans-serif;">
-    <div style="margin-bottom:36px;">${logoSvg}</div>
+    <div style="margin-bottom:36px;"><img src="${logoDataUri}" style="height:56px;width:56px;" /></div>
     <div style="margin-bottom:28px;font-size:15px;">
       <div>${new Date(order.date).toLocaleDateString()}</div>
       <div><strong>Invoice No. ${order.orderNumber ?? order.id}</strong></div>
