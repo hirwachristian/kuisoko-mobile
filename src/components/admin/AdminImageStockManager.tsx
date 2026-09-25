@@ -41,6 +41,16 @@ const AdminImageStockManager: React.FC<AdminImageStockManagerProps> = ({ images,
     onChange([...otherVariants, ...updatedImageVariants]);
   };
 
+  // A photo left at price 0 means "no override - use the product's own price", same convention as
+  // AdminVariantManager's color/size price - not that the photo is free.
+  const setImagePrice = (url: string, price: number) => {
+    const existing = variantForImage(url);
+    const updatedImageVariants = existing
+      ? imageVariants.map((v) => (v.id === existing.id ? { ...v, price } : v))
+      : [...imageVariants, { id: newId(), sku: '', color: '', size: '', imageUrl: url, price, stock: 0 }];
+    onChange([...otherVariants, ...updatedImageVariants]);
+  };
+
   const totalImageStock = imageVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
   const overAllocated = imageVariants.length > 0 && totalImageStock > productStock;
 
@@ -48,7 +58,7 @@ const AdminImageStockManager: React.FC<AdminImageStockManagerProps> = ({ images,
     <View>
       <View style={styles.headerRow}>
         <Text style={styles.hint}>
-          Use this instead of colors/sizes above if this product isn't meant to vary by either, but each photo should still have its own stock. Leave at 0 to skip a photo.
+          Use this instead of colors/sizes above if this product isn't meant to vary by either, but each photo should still have its own stock and, if you want, its own price. Leave stock at 0 to skip a photo; leave price at 0 to use the product's own price for that photo.
         </Text>
         {imageVariants.length > 0 && (
           <View style={[styles.stockBadge, overAllocated && styles.stockBadgeError]}>
@@ -67,18 +77,31 @@ const AdminImageStockManager: React.FC<AdminImageStockManagerProps> = ({ images,
       {images.map((url) => {
         const variant = variantForImage(url);
         const stock = variant?.stock ?? 0;
+        const price = variant?.price ?? 0;
         return (
           <View key={url} style={styles.row}>
             <Image source={{ uri: url }} style={styles.thumb} />
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={styles.fieldLabel}>Stock for this photo</Text>
-              <TextField
-                value={stock ? String(stock) : ''}
-                onChangeText={(t) => setImageStock(url, Number(t) || 0)}
-                placeholder="0"
-                keyboardType="numeric"
-              />
-              {stock > 0 && <Text style={styles.customBadge}>{stock} in stock</Text>}
+            <View style={{ flex: 1, gap: 6, flexDirection: 'row' }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={styles.fieldLabel}>Stock for this photo</Text>
+                <TextField
+                  value={stock ? String(stock) : ''}
+                  onChangeText={(t) => setImageStock(url, Number(t) || 0)}
+                  placeholder="0"
+                  keyboardType="numeric"
+                />
+                {stock > 0 && <Text style={styles.customBadge}>{stock} in stock</Text>}
+              </View>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={styles.fieldLabel}>Price for this photo</Text>
+                <TextField
+                  value={price ? String(price) : ''}
+                  onChangeText={(t) => setImagePrice(url, Number(t) || 0)}
+                  placeholder="Same as product"
+                  keyboardType="numeric"
+                />
+                {price > 0 && <Text style={styles.customBadge}>overrides base price</Text>}
+              </View>
             </View>
           </View>
         );
