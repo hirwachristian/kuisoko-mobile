@@ -105,14 +105,3 @@ export { lightColors, darkColors };
 // in-app theme, so they still need a fixed value to import directly.
 export const colors = lightColors;
 
-// The brand mark's own palette (frontend/components/KuISOKOLogoSVG.tsx) is a distinct, slightly
-// different green/orange than the UI's emerald/orange utilities - kept separate, and NOT flipped
-// for dark mode (the website doesn't reskin its logo for dark mode either).
-export const logoColors = {
-  bag: '#0B5D3B',
-  handle: '#F7931E',
-  check: '#F5B335',
-  textGreen: '#0B5D3B',
-  textOrange1: '#F7931E',
-  textOrange2: '#F5B335',
-};
