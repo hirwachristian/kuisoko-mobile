@@ -55,7 +55,7 @@ export const translations: Record<Language, Record<string, string>> = {
     home_hero_title_2: 'Isoko',
     home_hero_title_3: 'Your Marketplace',
     home_hero_title_4: 'Your Way',
-    home_hero_subtitle: 'Shop premium skincare, beauty products, and more with confidence. Express checkout options including MoMo Pay make shopping easier than ever.',
+    home_hero_subtitle: 'Everything you need, all in one place. Discover products you love, shop with confidence, and pay your way.',
     home_explore_more: 'Explore more',
     home_my_deals: 'My Deals',
 
@@ -287,7 +287,7 @@ export const translations: Record<Language, Record<string, string>> = {
     home_hero_title_2: 'Isoko',
     home_hero_title_3: 'Isoko Ryawe',
     home_hero_title_4: 'Uburyo Bwawe',
-    home_hero_subtitle: 'Gura ibikoresho byo kwita ku ruhu, ubwiza, n\'ibindi wizeye. Uburyo bwo kwishyura vuba nka MoMo Pay bituma ubugure bworoha kurushaho.',
+    home_hero_subtitle: 'Ibyo ukeneye byose, ahantu hamwe. Menya ibicuruzwa ubikunda, ugure wizeye, kandi wishyure uburyo ukunda.',
     home_explore_more: 'Reba byinshi',
     home_my_deals: 'Amasoko yanjye',
 
