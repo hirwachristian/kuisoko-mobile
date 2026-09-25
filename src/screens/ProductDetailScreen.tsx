@@ -439,22 +439,14 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {(product.images.length > 1 || (product.videoUrls?.length ?? 0) > 0) && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailRow} contentContainerStyle={{ gap: 8 }}>
-          {product.images.map((img, i) => {
-            const imageVariant = hasImageStockVariants ? product.variants.find((v) => v.imageUrl === img) : undefined;
-            return (
-              <TouchableOpacity key={img} style={styles.thumbnailWrap} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
-                <Image
-                  source={{ uri: img }}
-                  style={[styles.thumbnail, activeVideoIndex === null && activeImage === i ? styles.thumbnailActive : styles.thumbnailInactive]}
-                />
-                {imageVariant && (
-                  <Text style={[styles.imageStockLabel, imageVariant.stock <= 0 && styles.imageStockLabelOut]}>
-                    {imageVariant.stock > 0 ? `${imageVariant.stock} left` : t('product_out_of_stock')}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {product.images.map((img, i) => (
+            <TouchableOpacity key={img} style={styles.thumbnailWrap} onPress={() => { setActiveImage(i); setActiveVideoIndex(null); }}>
+              <Image
+                source={{ uri: img }}
+                style={[styles.thumbnail, activeVideoIndex === null && activeImage === i ? styles.thumbnailActive : styles.thumbnailInactive]}
+              />
+            </TouchableOpacity>
+          ))}
           {(product.videoUrls ?? []).map((videoUrl, i) => (
             <TouchableOpacity key={videoUrl} onPress={() => setActiveVideoIndex(i)}>
               <View style={[styles.thumbnail, styles.videoThumbnail, activeVideoIndex === i ? styles.thumbnailActive : styles.thumbnailInactive]}>
@@ -821,8 +813,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   thumbnailActive: { borderColor: colors.emerald600 },
   thumbnailInactive: { borderColor: colors.slate100, opacity: 0.6 },
   videoThumbnail: { backgroundColor: colors.slate800, alignItems: 'center', justifyContent: 'center' },
-  imageStockLabel: { fontSize: 9.5, fontWeight: '800', color: colors.emerald600 },
-  imageStockLabelOut: { color: colors.rose600 },
   body: { padding: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   name: { fontSize: 20, fontWeight: '800', color: colors.slate900, letterSpacing: -0.3 },
