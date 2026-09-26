@@ -245,11 +245,14 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     setSelectedSize((prev) => (prev === size ? undefined : size));
   };
 
-  // product.images[activeImage] is whatever photo is actually on screen right now - it already
-  // reflects a color-variant jump (handleSelectColor moves activeImage to match) AND a product
-  // with no variants at all where the shopper just tapped a different thumbnail (e.g. picking
-  // "the second cap" among several plain photos with nothing else to hang that choice on) - so
-  // using it here covers both cases with one read instead of needing separate logic for each.
+  // Whatever photo is actually on screen right now only counts as "the selection" when it's
+  // actually standing in for one - a color-variant jump (handleSelectColor moves activeImage to
+  // match) or a per-image-stock product (the gallery itself is the picker there). A plain product
+  // with no variants at all uses its photos purely as a gallery of one item's angles/features -
+  // browsing to "the sole of the shoe" is not selecting anything to buy, so the cart/order always
+  // gets the first/main image regardless of whichever photo happened to be on screen.
+  const cartImage = hasColorSizeVariants || hasImageStockVariants ? product.images[activeImage] : product.images[0];
+
   const handleAddToCart = () => {
     if (requiresSelection) {
       Alert.alert(t('detail_select_color_size'));
@@ -259,7 +262,7 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       Alert.alert(t('detail_photo_out_of_stock'));
       return;
     }
-    addToCart(product.id, quantity, selectedColor, selectedSize, effectivePrice, product.images[activeImage]);
+    addToCart(product.id, quantity, selectedColor, selectedSize, effectivePrice, cartImage);
   };
 
   // Ports frontend/pages/ProductDetail.tsx's handleBuyNow exactly: it does NOT call addToCart at
@@ -279,7 +282,7 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       directBuyItem: {
         productId: product.id,
         name: product.name,
-        image: product.images[activeImage],
+        image: cartImage,
         price: effectivePrice,
         quantity,
         selectedColor,
