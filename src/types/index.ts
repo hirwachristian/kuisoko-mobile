@@ -43,6 +43,10 @@ export interface Product {
   stock: number;
   featured?: boolean;
   groupBuyEnabled?: boolean;
+  /** When true (default) and this product has no color/size or per-image-stock variants, its
+   * photos are treated as angles/features of one item - Add to Cart/Buy Now always attach
+   * images[0] regardless of which photo was on screen. */
+  isSingleProduct?: boolean;
   colorImages?: Record<string, string>;
   /** Per-image name/description override, keyed by image URL (one of `images`) - both optional.
    * Falls back to this product's own name/description wherever an image has no entry here. */

@@ -36,6 +36,9 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const [stock, setStock] = useState('');
   const [featured, setFeatured] = useState(false);
   const [groupBuyEnabled, setGroupBuyEnabled] = useState(false);
+  // Checked by default: a fresh product's photos are assumed to be angles of one item until real
+  // color/size or per-image-stock variants are set up below.
+  const [isSingleProduct, setIsSingleProduct] = useState(true);
   const [images, setImages] = useState<string[]>([]);
   // Subset of `images` chosen as the card/listing thumbnail(s) - independent of variants, so it
   // works even for a product with no color/size/image-stock variants at all.
@@ -70,6 +73,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       setStock(String(p.stock));
       setFeatured(!!p.featured);
       setGroupBuyEnabled(!!p.groupBuyEnabled);
+      setIsSingleProduct(p.isSingleProduct ?? true);
       setImages(p.images);
       setThumbnailImages(p.thumbnailImages ?? []);
       setVideoUrls(p.videoUrls ?? []);
@@ -259,6 +263,7 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
       colorImages,
       imageDetails,
       groupBuyEnabled,
+      isSingleProduct,
       variants: variants
         .filter((v) => v.color || v.size || v.imageUrl)
         .map((v) => ({ sku: v.sku, color: v.color, size: v.size, imageUrl: v.imageUrl, price: Number(v.price) || 0, stock: Number(v.stock) || 0 })),
@@ -396,6 +401,13 @@ const AdminProductFormScreen: React.FC<Props> = ({ route, navigation }) => {
           <Text style={styles.switchLabel}>Allow group buying</Text>
           <Switch value={groupBuyEnabled} onValueChange={setGroupBuyEnabled} trackColor={{ true: colors.emerald800, false: colors.slate200 }} />
         </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Single product (multiple angles)</Text>
+          <Switch value={isSingleProduct} onValueChange={setIsSingleProduct} trackColor={{ true: colors.emerald800, false: colors.slate200 }} />
+        </View>
+        <Text style={styles.variantHint}>
+          On (default): these photos are all views of one item - Add to Cart/Buy Now always use the first photo, no matter which one the shopper is looking at. Turn off only if this product has no colors/sizes or per-image stock below, but whichever photo is on screen should still be the one added to the cart.
+        </Text>
       </Card>
 
       <SectionTitle style={{ marginTop: 20 }}>Variants</SectionTitle>

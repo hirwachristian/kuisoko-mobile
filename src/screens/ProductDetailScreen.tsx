@@ -247,11 +247,13 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   // Whatever photo is actually on screen right now only counts as "the selection" when it's
   // actually standing in for one - a color-variant jump (handleSelectColor moves activeImage to
-  // match) or a per-image-stock product (the gallery itself is the picker there). A plain product
-  // with no variants at all uses its photos purely as a gallery of one item's angles/features -
-  // browsing to "the sole of the shoe" is not selecting anything to buy, so the cart/order always
-  // gets the first/main image regardless of whichever photo happened to be on screen.
-  const cartImage = hasColorSizeVariants || hasImageStockVariants ? product.images[activeImage] : product.images[0];
+  // match) or a per-image-stock product (the gallery itself is the picker there). For a plain
+  // product (neither), the admin's own "Single product (multiple angles)" checkbox decides:
+  // checked (the default) means the photos are just views of one item, so the cart/order always
+  // gets the first/main image; unchecked restores attaching whichever photo was on screen.
+  const cartImage = hasColorSizeVariants || hasImageStockVariants
+    ? product.images[activeImage]
+    : (product.isSingleProduct ?? true) ? product.images[0] : product.images[activeImage];
 
   const handleAddToCart = () => {
     if (requiresSelection) {
